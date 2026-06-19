@@ -1,17 +1,17 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -fopenmp
+CFLAGS = -Wall -Wextra -O2
 
-SRC = main.c utils.c algorithm.c list.c
+SRC = main.c
 
 OBJDIR = obj
 OBJ = $(addprefix $(OBJDIR)/,$(SRC:.c=.o))
 
-TARGET = smith_waterman
+TARGET = sequence_generator
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ -lm
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)

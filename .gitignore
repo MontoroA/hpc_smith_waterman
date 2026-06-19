@@ -1,4 +1,7 @@
 sequences/*
-
+obj/*
+sequence_generator/obj/*
+sequence_generator/*.txt
 *.exe
 *.o
+.vscode/*

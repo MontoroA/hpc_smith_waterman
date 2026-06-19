@@ -76,7 +76,7 @@ void run(char* seq1, char* seq2, int len1, int len2){
         }
     }
 
-    print_matrix(matrix, len1 + 1, len2 + 1);
+    //print_matrix(matrix, len1 + 1, len2 + 1);
 
     //Find max score and backtrack to find the longest common subsequence
     List* matched_seq1 = NULL;
