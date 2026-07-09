@@ -1,23 +1,24 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -fopenmp
+CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude 
+LDFLAGS = -fopenmp -lm
 
-SRC = main.c utils.c algorithm.c list.c
+SRC = src/main.c src/utils/io.c src/utils/sequences.c src/algorithm/algorithm.c src/algorithm/primitives/list.c
 
-OBJDIR = obj
-OBJ = $(addprefix $(OBJDIR)/,$(SRC:.c=.o))
+OBJDIR = build
+OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
 
-TARGET = smith_waterman
+TARGET = build/smith_waterman
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $^ -o $@
+	mkdir -p build
+	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
-
-$(OBJDIR)/%.o: %.c | $(OBJDIR)
+build/%.o: src/%.c
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
+
 
 clean:
 	rm -rf $(OBJDIR) $(TARGET)

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "utils.h"
-#include "list.h"
+#include "algorithm/primitives/utils.h"
+#include "algorithm/primitives/list.h"
 
 int max_val(int* matrix, int i, int j, char* seq1, char* seq2, int row_size){
     int gap_penalty = W(1);

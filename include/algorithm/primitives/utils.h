@@ -13,6 +13,5 @@ typedef enum {
     LEFT = 2
 } Direction;
 
-int load_sequence(const char* filename, char** seq, int* len);
 
 #endif

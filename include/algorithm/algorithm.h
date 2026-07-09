@@ -2,7 +2,7 @@
 #define ALGORITHM_H
 
 
-#include "utils.h"
+#include "primitives/utils.h"
 
 void run(char* seq1, char* seq2, int len1, int len2);
 

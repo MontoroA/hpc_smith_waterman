@@ -1,7 +1,5 @@
-sequences/*
 obj/*
-sequence_generator/obj/*
-sequence_generator/*.txt
+build/*
 *.exe
 *.o
 .vscode/*
