@@ -1,5 +1,5 @@
-obj/*
+data/small/*
+data/medium/*
+data/large/*
 build/*
-*.exe
-*.o
 .vscode/*
