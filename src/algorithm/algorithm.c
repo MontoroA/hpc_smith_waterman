@@ -62,27 +62,32 @@ void run(char* seq1, char* seq2, int len1, int len2){
 
 
     //Complete the matrix
-    int i;
-    int j;
+    int tope_block_j = len2 + 1;
+    // int tope_block_i = len1 + 1;
     int max_i = 0, max_j = 0, max_score = 0;
-    for(i = 1; i < (1 + len1) ; i++){
-        for(j = 1; j < (1+ len2) ; j++){
-            matrix[i*(len2 + 1) + j] = max_val(matrix, i, j, seq1, seq2, len2+1);
-            if(matrix[i*(len2 + 1) + j] > max_score){
-                max_score = matrix[i*(len2 + 1) + j];
+    int k;
+    int tope = len1 + len2 - 1;
+    for(k = 0 ; k <= tope ; k++){
+        int init_i = min(k, len1);
+        int stop_i = max(1, k - len2 + 2);
+        for(int i = init_i ; i >= stop_i ; i--){
+            int j = k-i;
+            matrix[i*tope_block_j + j] = max_val(matrix, i, j, seq1, seq2, tope_block_j);
+            if(matrix[i*tope_block_j + j] > max_score){
+                max_score = matrix[i*tope_block_j + j];
                 max_i = i;
                 max_j = j;
             }
         }
     }
 
-    //print_matrix(matrix, len1 + 1, len2 + 1);
+    // print_matrix(matrix, len1 + 1, len2 + 1);
 
     //Find max score and backtrack to find the longest common subsequence
     List* matched_seq1 = NULL;
     List* matched_seq2 = NULL;
-    i = max_i;
-    j = max_j;
+    int i = max_i;
+    int j = max_j;
     int current_score = max_score;
     do{
         Direction dir = reverse_max_val(matrix, i, j, seq1, seq2, len2 + 1);
