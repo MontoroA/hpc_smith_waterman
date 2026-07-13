@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef PRIMITIVES_H
+#define PRIMITIVES_H
 
 #define M       2                       // positive reward for similarity match
 #define mu      10                       // negative reward for similarity mismatch
@@ -14,5 +14,11 @@ typedef enum {
     DIAG = 1,
     LEFT = 2
 } Direction;
+
+typedef struct {
+    int i;
+    int j;
+    int max_score;
+} MatrixCell;
 
 #endif

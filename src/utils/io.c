@@ -3,15 +3,6 @@
 
 #include "utils/io.h"
 
-// const int MODE_INVALID = 0;
-// const int MODE_DEFAULT = 1;
-// const int MODE_FROM_FILES = 2;
-// const int MODE_FROM_STRINGS = 3;
-// const int MODE_GENERATE_RANDOM = 4;
-// const int MODE_LIST_SEQUENCES = 5;
-// const int MODE_PRINT_SEQUENCE = 6;
-// const int MODE_DELETE_SEQUENCE = 7;
-
 int read_mode(int argc, char** argv){
     if (argc < 2) {
         fprintf(stderr, "Modo no especificado.\n");
@@ -99,5 +90,11 @@ int read_mode(int argc, char** argv){
     }
 
     return mode;
+}
+
+int reports(double start, double end){
+    double tiempo = end - start;
+    printf("Tiempo de ejecución: %f segundos\n", tiempo);
+    return 0;
 }
 

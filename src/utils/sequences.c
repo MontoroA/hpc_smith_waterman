@@ -28,7 +28,7 @@ char* decide_folder_based_on_size(int length) {
     return path_large;
 }
 
-Sequence* load_sequence_in_folders(const char* filename){
+CharArray* load_sequence_in_folders(const char* filename){
     FILE *filePointer;
     filePointer = fopen(filename, "rb");
 
@@ -42,7 +42,7 @@ Sequence* load_sequence_in_folders(const char* filename){
     long length = ftell(filePointer);
     fseek(filePointer, 0, SEEK_SET);
 
-    Sequence* seq = malloc(sizeof(Sequence));
+    CharArray* seq = malloc(sizeof(CharArray));
     seq->data = malloc(length + 2);
     char* temp = seq->data + 1;
     int read = fread(temp, 1, length, filePointer);
@@ -61,7 +61,7 @@ Sequence* load_sequence_in_folders(const char* filename){
 }
 
 
-Sequence* generate_sequence(int exp) {
+CharArray* generate_sequence(int exp) {
     srand(time(NULL));
     char bases[] = {'A', 'C', 'G', 'T'};
     unsigned int size = pow(10, exp);
@@ -73,7 +73,8 @@ Sequence* generate_sequence(int exp) {
     for(unsigned int i = 0; i < size; i++) {
         printf("%c", result[i]);
     }
-    Sequence* seq = malloc(sizeof(Sequence));
+    printf("\n");
+    CharArray* seq = malloc(sizeof(CharArray));
     seq->data = result;
     seq->length = size;
     return seq;
@@ -106,7 +107,7 @@ int count_files(const char *path) {
     return count;
 }
 
-int save_sequence(const char* folder, Sequence* seq) {
+int save_sequence(const char* folder, CharArray* seq) {
     char filename[PATH_MAX];
     int file_count = count_files(folder);
 
@@ -116,7 +117,7 @@ int save_sequence(const char* folder, Sequence* seq) {
         printf("Could not open file for writing: %s\n", filename);
         return -1;
     }
-    int written = fwrite(seq->data + 1, 1, seq->length, filePointer);
+    int written = fwrite(seq->data, 1, seq->length, filePointer);
     fclose(filePointer);
     if(written != seq->length){
         return -1;
@@ -184,26 +185,26 @@ int print_sequence(const char *filepath) {
     Estas condiciones si cumplen si previamente se llamo a io.c::read_mode(args, argv), 
     que verifica que el modo sea válido y que la cantidad de argumentos sea correcta.
 */
-Sequence** execute_mode(int mode, char** params){
-    Sequence** seqs = NULL;
+CharArray** execute_mode(int mode, char** params){
+    CharArray** seqs = NULL;
     int err;
     switch(mode){
         case MODE_DEFAULT:
-            seqs = malloc(2*sizeof(Sequence*));
+            seqs = malloc(2*sizeof(CharArray*));
             seqs[0] = load_sequence_in_folders(default_seq1);
             seqs[1] = load_sequence_in_folders(default_seq2);
             break;
             
         case MODE_FROM_FILES:
-            seqs = malloc(2*sizeof(Sequence*));
+            seqs = malloc(2*sizeof(CharArray*));
             seqs[0] = load_sequence_in_folders(params[0]);
             seqs[1] = load_sequence_in_folders(params[1]);
             break;
             
         case MODE_FROM_STRINGS:
-            seqs = malloc(2*sizeof(Sequence*));
-            Sequence* seq1 = malloc(sizeof(Sequence));
-            Sequence* seq2 = malloc(sizeof(Sequence));
+            seqs = malloc(2*sizeof(CharArray*));
+            CharArray* seq1 = malloc(sizeof(CharArray));
+            CharArray* seq2 = malloc(sizeof(CharArray));
             seq1->length = strlen(params[0]);
             seq2->length = strlen(params[1]);
             seq1->data = malloc(seq1->length + 1);
@@ -218,7 +219,7 @@ Sequence** execute_mode(int mode, char** params){
             
         case MODE_GENERATE_RANDOM:
             int exponent = atoi(params[0]);
-            Sequence* generated_seq = generate_sequence(exponent);
+            CharArray* generated_seq = generate_sequence(exponent);
             char* folder =  decide_folder_based_on_size(generated_seq->length);
             err = save_sequence(folder, generated_seq);
             if(err != 0){

@@ -1,11 +1,8 @@
 #ifndef SEQUENCES_H
 #define SEQUENCES_H
 
-typedef struct {
-    char* data;
-    int length;
-} Sequence;
+#include "utils/utils.h"
 
-Sequence** execute_mode(int mode, char** params);
+CharArray** execute_mode(int mode, char** params);
 
 #endif

@@ -1,0 +1,7 @@
+En MPI_PARAMS.conf se especifican todos los parámetros de ejecución con MPI.
+Estos parámetros son:
+- NRO_PROCS: Cantidad de procesos a ejecutar.
+- HOSTFILE: Archivo de hosts a usar para la ejecución.
+
+En general, conviene crear archivos de hosts distintos, en vez de tener uno solo e ir modificandolo.
+Por ejemplo: tener un hosts_fing para usar la infraestructura de facultad, y un hosts_local para usar solo mi máquina.
