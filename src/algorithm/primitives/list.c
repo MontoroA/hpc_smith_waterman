@@ -34,13 +34,14 @@ int length(List* list){
 
 char* print(List* list){
     int len = length(list);
-    char* res = malloc(sizeof(char)*len); 
+    char* res = malloc(len + 1);
     int i = 0;
     while(list != NULL){
         res[i] = list->value;
         list = list->next;
         i++;
     }
+    res[i] = '\0';
     printf("%s\n", res);
     return res;
 }
