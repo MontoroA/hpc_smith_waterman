@@ -48,6 +48,7 @@ void print_matrix(int* matrix, int rows, int cols){
     }
 }
 
+//TODO amontoro: Hay que pensar que pasa en los bloques borde, como se evita ese caso
 MatrixCell* complete_block(int* matrix, CharArray* sequence1, CharArray* sequence2){
     char* seq1 = sequence1->data;
     char* seq2 = sequence2->data;
@@ -81,6 +82,7 @@ MatrixCell* complete_block(int* matrix, CharArray* sequence1, CharArray* sequenc
     //         }
     //     }
     // }
+
 
     // VERSION 3: SECUENCIAL
     int i;
