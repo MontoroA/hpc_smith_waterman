@@ -38,6 +38,7 @@ void print_block_map(MatrixMap map, CharArray* seq1, CharArray* seq2)
 
 MatrixIndex* get_unlocked_neighbors(MatrixIndex block, MatrixMap map)
 {
+    //map[block] = true; //marcar bloque como procesado
     //TODO
     //Mirar el bloque recibido: puede habilitar a los siguientes: abajo, derecha, siguiente en diagonal
     //Mirar map para eso, obtener

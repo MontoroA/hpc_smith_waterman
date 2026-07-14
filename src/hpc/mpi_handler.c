@@ -32,15 +32,26 @@ int run_master(int argc, char** argv)
     CharArray* seq2 = seqs[1];
 
     int* matrix = malloc((1 + seq1->length) * (1 + seq2->length) * sizeof(int));
+
+
+
+
+
+    // matrix de booleanos: hay una entrada booleana por cada bloque indicando si ya se proceso ese bloque o no
     MatrixMap map = create_block_map(seq1, seq2);
+
+    // Estructura de donde voy sacando bloques para asignar trabajo
     Queue* queue = createQueue(max(seq1->length, seq2->length));
 
+    // Estructura para que el master sepa que procesos estan disponibles para trabajar
     int nro_procs;
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
     bool* proc_available = malloc((nro_procs + 1) * sizeof(bool));
     for(int i = 1; i <= nro_procs; i++){
         proc_available[i] = true;
     }
+
+
     int context_pid = 1; //elegir un primer proceso
     char* data = NULL; //Cargar con datos para enviar
     int count = 0;
@@ -49,16 +60,22 @@ int run_master(int argc, char** argv)
     MPI_Status status;
     int ierr =  MPI_ISend(data, count, MPI_CHAR, context_pid, tag, MPI_COMM_WORLD, request);
     int working_procs = 0;
-    enqueue(queue, (MatrixIndex){0, 0});
+
+
+
+
     while(true){
         ierr = MPI_Recv(data, count, MPI_CHAR, context_pid, tag, MPI_COMM_WORLD, status);
         proc_available[context_pid] = true;
-        MatrixIndex block; // Obtener de MPI_Recv
+        //obtener datos del MPI_Recv, como;
+        MatrixIndex block;
         // process result
-        MatrixIndex* newly_available_blocks = get_unlocked_neighbors(block, map)
-//         newly_available_blocks = get_unlocked_neighbors(block, map)
-//         for each newly_available_block in newly_available_blocks: queue.enqueue(newly_available_block)
-//         working_procs--;
+        MatrixIndex* newly_available_blocks = get_unlocked_neighbors(block, map);
+        // each newly_available_block in newly_available_blocks: queue.enqueue(newly_available_block)
+        for(int j = 0; j < get_block_count(newly_available_blocks); j++){
+            enqueue(queue, newly_available_blocks[j]);
+        }
+        working_procs--;
 
         for(int i = 1; i <= nro_procs; i++){
             if(proc_available[i]){
@@ -70,17 +87,6 @@ int run_master(int argc, char** argv)
                 working_procs++;
             }
         }
-//
-//
-//
-        // for each available worker {
-        //     if (queue has work) {
-        //         dequeue next block
-        //         send it to worker
-        //         mark worker busy
-        //         increment pending
-        //     }
-        // }
 
         if(isEmpty(queue) && working_procs == 0){
             break;
@@ -90,6 +96,13 @@ int run_master(int argc, char** argv)
     
     // traceback(matrix, res, seq1, seq2);
     // print_block_map(map, seq1, seq2);
+
+
+
+
+
+
+
 
     free(matrix);
     free(map.visited);
