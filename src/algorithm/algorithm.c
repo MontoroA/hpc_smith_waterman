@@ -5,9 +5,9 @@
 #include "algorithm/primitives/list.h"
 #include "utils/utils.h"
 
-int max_val(int* matrix, int i, int j, char* seq1, char* seq2, int row_size){
+int max_val(int* matrix, int i, int j, char* seq1, char* seq2, int start_seq1, int start_seq2, int row_size) {
     int gap_penalty = W(1);
-    int similarity = s(seq1[i], seq2[j]);
+    int similarity = s(seq1[start_seq1 + i], seq2[start_seq2 + j]);
     
     int* prev_row = matrix + ((i-1) * row_size);
     int* curr_row = matrix + (i * row_size);
@@ -90,7 +90,7 @@ MatrixCell* complete_block(int* matrix, CharArray* sequence1, CharArray* sequenc
     int max_i = 0, max_j = 0, max_score = 0;
     for(i = 1; i < (1 + len1) ; i++){
         for(j = 1; j < (1+ len2) ; j++){
-            matrix[i*(len2 + 1) + j] = max_val(matrix, i, j, seq1, seq2, len2+1);
+            //matrix[i*(len2 + 1) + j] = max_val(matrix, i, j, seq1, seq2, len2+1);
             if(matrix[i*(len2 + 1) + j] > max_score){
                 max_score = matrix[i*(len2 + 1) + j];
                 max_i = i;
