@@ -10,11 +10,11 @@ block create_block(int id) {
     block_dscr->id = id;
     block_dscr->block_index.i = -1;
     block_dscr->block_index.j = -1;
-    block_dscr->size_w = BLOCK_WIDTH;   
-    block_dscr->size_h = BLOCK_HEIGHT;
+    block_dscr->start_seq1 = -1;
+    block_dscr->start_seq2 = -1;   
     block_dscr->num_rows = -1;
     block_dscr->num_cols = -1;
-    block_dscr->matrix = malloc((block_dscr->size_w + 1) * (block_dscr->size_h + 1) * sizeof(int));
+    block_dscr->matrix = malloc((BLOCK_WIDTH + 1) * (BLOCK_HEIGHT + 1) * sizeof(int));
     return block_dscr;
 }
 
@@ -25,9 +25,14 @@ void free_block(block block_dscr) {
 }
 
 //Carga en un bloque las dependencias, su indice de bloque, y cuantas filas y columnas del bloque se van a usar.
-void load_block(block block_dscr, MatrixIndex block_index, int* top_row, int* left_col, int prev_diag, int num_rows, int num_cols) {
+void load_block(block block_dscr, MatrixIndex block_index, int start_seq1, int start_seq2, int num_rows, 
+                int num_cols, int* top_row, int* left_col, int prev_diag) {
     //cargo el indice del bloque en la matriz de bloques
     block_dscr->block_index = block_index;
+
+    //cargo el indice de la secuencia 1 y 2 donde empieza el bloque
+    block_dscr->start_seq1 = start_seq1;
+    block_dscr->start_seq2 = start_seq2;
 
     //cargo la cantidad de filas y columnas usadas del bloque
     block_dscr->num_rows = num_rows;
@@ -40,7 +45,7 @@ void load_block(block block_dscr, MatrixIndex block_index, int* top_row, int* le
 
     //cargo el valor de la columna izquierda
     for(int i = 0; i < num_rows; i++) {
-        block_dscr->matrix[(i+1) * (block_dscr->size_w + 1)] = left_col[i];
+        block_dscr->matrix[(i+1) * BLOCK_WIDTH] = left_col[i];
     }
     
     //cargo el valor de la diagonal anterior
@@ -50,9 +55,11 @@ void load_block(block block_dscr, MatrixIndex block_index, int* top_row, int* le
 
 //block_dscr es el bloque a calcular, 
 //num_rows es la cantidad de filas usadas del bloque, num_cols es la cantidad de columnas usadas del bloque
-void calculate_block(block block_dscr, char* seq1, char* seq2, int start_seq1, int start_seq2) {
+void calculate_block(block block_dscr, char* seq1, char* seq2) {
     //calcular el bloque
     int* matrix = block_dscr->matrix;
+    int start_seq1 = block_dscr->start_seq1;
+    int start_seq2 = block_dscr->start_seq2;
     int num_rows = block_dscr->num_rows;
     int num_cols = block_dscr->num_cols;
 
@@ -77,12 +84,14 @@ void calculate_block(block block_dscr, char* seq1, char* seq2, int start_seq1, i
     return;
 }
 
+/*NO OLVIDAR QUE PARA LOS CALCULOS DE ABAJO SE TIENE EN CUENTA QUE LA MATRIX TIENE UNA FILA Y UNA COLUMNA EXTRA*/
+
 //carga en la direccion bottom_row la ultima fila usada del bloque
 void extract_bottom_row(block block_dscr, int* bottom_row) {
     int num_rows = block_dscr->num_rows;
     int num_cols = block_dscr->num_cols;
     for(int j = 0; j < num_cols; j++) {
-        bottom_row[j] = block_dscr->matrix[(num_rows - 1) * (num_cols - 1) + (j+1)]; //j+1 porque la primera columna es la columna de la dependencia izquierda
+        bottom_row[j] = block_dscr->matrix[num_rows * BLOCK_WIDTH + (j+1)]; //j+1 porque la primera columna es la columna de la dependencia izquierda
     }
     return;
 }
@@ -92,7 +101,7 @@ void extract_right_column(block block_dscr, int* right_col) {
     int num_rows = block_dscr->num_rows;
     int num_cols = block_dscr->num_cols;
     for(int i = 0; i < num_rows; i++) {
-        right_col[i] = block_dscr->matrix[(i+1) * (num_cols - 1)]; //i+1 porque la primera fila es la fila de la dependencia superior
+        right_col[i] = block_dscr->matrix[(i+1) * num_cols]; //i+1 porque la primera fila es la fila de la dependencia superior
     }
     return;
 }
@@ -101,6 +110,6 @@ void extract_right_column(block block_dscr, int* right_col) {
 void extract_last_diagonal(block block_dscr, int* last_diagonal) {
     int num_rows = block_dscr->num_rows;
     int num_cols = block_dscr->num_cols;
-    last_diagonal = block_dscr->matrix[num_rows * num_cols]; //la celda diagonal es la ultima celda del bloque
+    last_diagonal = block_dscr->matrix[num_rows * BLOCK_WIDTH + num_cols]; //la celda diagonal es la ultima celda del bloque
     return;
 }
