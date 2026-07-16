@@ -19,26 +19,4 @@ typedef enum {
     LEFT = 2
 } Direction;
 
-typedef struct {
-    int i;
-    int j;
-    int max_score;
-} MatrixCell;
-
-typedef struct {
-    int i;
-    int j;
-} MatrixIndex;
-
-typedef struct {
-    bool* visited;
-    int current_level;
-} MatrixMap;
-
-MatrixMap create_block_map(CharArray* seq1, CharArray* seq2);
-
-void print_block_map(MatrixMap map, CharArray* seq1, CharArray* seq2);
-
-MatrixIndex* get_unlocked_neighbors(MatrixIndex block, MatrixMap map);
-
 #endif

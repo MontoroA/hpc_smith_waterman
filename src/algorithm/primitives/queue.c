@@ -15,7 +15,7 @@ Queue* createQueue(int size)
         return NULL;
     }
 
-    q->items = (MatrixIndex *)malloc(size * sizeof(MatrixIndex));
+    q->items = (MatrixBlock *)malloc(size * sizeof(MatrixBlock));
     if (!q->items) {
         free(q);
         return NULL;
@@ -39,7 +39,7 @@ bool isFull(Queue *q)
 }
 
 
-bool enqueue(Queue *q, MatrixIndex value)
+bool enqueue(Queue *q, MatrixBlock value)
 {
     if (isFull(q)) {
         return false;
@@ -53,12 +53,12 @@ bool enqueue(Queue *q, MatrixIndex value)
 }
 
 
-MatrixIndex dequeue(Queue *q){
+MatrixBlock dequeue(Queue *q){
     if (isEmpty(q)) {
-        return (MatrixIndex){-1, -1}; // Queue is empty
+        return (MatrixBlock){-1, -1, false}; // Queue is empty
     }
 
-    MatrixIndex value = q->items[q->front];
+    MatrixBlock value = q->items[q->front];
 
     if (q->front == q->rear) {
         q->front = -1;
@@ -68,4 +68,11 @@ MatrixIndex dequeue(Queue *q){
     }
 
     return value;
+}
+
+void freeQueue(Queue *q) {
+    if (q) {
+        free(q->items);
+        free(q);
+    }
 }

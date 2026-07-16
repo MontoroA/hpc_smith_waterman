@@ -5,7 +5,6 @@
 #include "utils/io.h"
 #include "utils/sequences.h"
 #include "hpc/mpi_handler.h"
-#include "algorithm/algorithm.h"
 
 
 int main(int argc, char* argv[])

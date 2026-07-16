@@ -4,7 +4,9 @@
 #include "algorithm/primitives/primitives.h"
 #include "algorithm/primitives/list.h"
 #include "utils/utils.h"
+#include "algorithm/blocks.h"
 
+//TODO solucionar parametros: deberia recibir chararray con la subsequencia considerada
 int max_val(int* matrix, int i, int j, char* seq1, char* seq2, int start_seq1, int start_seq2, int row_size) {
     int gap_penalty = W(1);
     int similarity = s(seq1[start_seq1 + i], seq2[start_seq2 + j]);
@@ -48,21 +50,12 @@ void print_matrix(int* matrix, int rows, int cols){
     }
 }
 
-//TODO amontoro: Hay que pensar que pasa en los bloques borde, como se evita ese caso
-MatrixCell* complete_block(int* matrix, CharArray* sequence1, CharArray* sequence2){
+
+BlockResult* complete_block(int* matrix, CharArray* sequence1, CharArray* sequence2){
     char* seq1 = sequence1->data;
     char* seq2 = sequence2->data;
     int len1 = sequence1->length;
     int len2 = sequence2->length;
-
-    //put 0s in first row 
-    for(int j = 0; j < (1 + len2) ; j++){
-        matrix[j] = 0;
-    }
-    //and first column
-    for(int i = 0; i < (1 + len1) ; i++){
-        matrix[i * (len2 + 1)] = 0;
-    }
 
     // VERSION 2: ANTIDIAGONAL INICIAL
     // int tope_block_j = len2 + 1;
@@ -90,7 +83,8 @@ MatrixCell* complete_block(int* matrix, CharArray* sequence1, CharArray* sequenc
     int max_i = 0, max_j = 0, max_score = 0;
     for(i = 1; i < (1 + len1) ; i++){
         for(j = 1; j < (1+ len2) ; j++){
-            //matrix[i*(len2 + 1) + j] = max_val(matrix, i, j, seq1, seq2, len2+1);
+            //TODO
+            // matrix[i*(len2 + 1) + j] = max_val(matrix, i, j, seq1, seq2, len2+1);
             if(matrix[i*(len2 + 1) + j] > max_score){
                 max_score = matrix[i*(len2 + 1) + j];
                 max_i = i;
@@ -100,10 +94,10 @@ MatrixCell* complete_block(int* matrix, CharArray* sequence1, CharArray* sequenc
     }
     
 
-    MatrixCell* result = malloc(sizeof(MatrixCell));
-    result->i = max_i;
-    result->j = max_j;
-    result->max_score = max_score;
+    BlockResult* result = malloc(sizeof(BlockResult));
+    result->result.i = max_i;
+    result->result.j = max_j;
+    result->result.max_score = max_score;
 
     // print_matrix(matrix, len1 + 1, len2 + 1);
 

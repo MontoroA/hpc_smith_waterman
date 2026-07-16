@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 
-#include "algorithm/primitives/primitives.h"
+#include "algorithm/blocks.h"
 
 typedef struct {
-    MatrixIndex *items;
+    MatrixBlock *items;
     int front;
     int rear;
     int size;
@@ -16,8 +16,9 @@ typedef struct {
 Queue* createQueue(int size);
 bool isEmpty(Queue *q);
 bool isFull(Queue *q);
-bool enqueue(Queue *q, MatrixIndex value);
-MatrixIndex dequeue(Queue *q);
+bool enqueue(Queue *q, MatrixBlock value);
+MatrixBlock dequeue(Queue *q);
+void freeQueue(Queue *q);
 
 
 

@@ -7,6 +7,7 @@
 #include "utils/io.h"
 #include "utils/sequences.h"
 #include "utils/utils.h"
+#include "algorithm/blocks.h"
 #include "algorithm/algorithm.h"
 #include "algorithm/primitives/primitives.h"
 #include "algorithm/primitives/queue.h"
@@ -37,13 +38,9 @@ int run_master(int argc, char** argv)
 
 
 
-    // matrix de booleanos: hay una entrada booleana por cada bloque indicando si ya se proceso ese bloque o no
-    MatrixMap map = create_block_map(seq1, seq2);
-
-    // Estructura de donde voy sacando bloques para asignar trabajo
+    BlockMap* map = create_block_map(seq1, seq2);
     Queue* queue = createQueue(max(seq1->length, seq2->length));
 
-    // Estructura para que el master sepa que procesos estan disponibles para trabajar
     int nro_procs;
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
     bool* proc_available = malloc((nro_procs + 1) * sizeof(bool));
@@ -52,39 +49,51 @@ int run_master(int argc, char** argv)
     }
 
 
-    int context_pid = 1; //elegir un primer proceso
-    char* data = NULL; //Cargar con datos para enviar
+    //TODO: poner las filas dependientes para el primer bloque, antes de mandarselo al cnxt_pid = 1
+    // //put 0s in first row 
+    // for(int j = 0; j < (1 + len2) ; j++){
+    //     matrix[j] = 0;
+    // }
+    // //and first column
+    // for(int i = 0; i < (1 + len1) ; i++){
+    //     matrix[i * (len2 + 1)] = 0;
+    // }
+
+
+    int cnxt_pid = 1;
+    char* data = NULL; //TODO Cargar con datos para enviar
     int count = 0;
     int tag = 0;
     MPI_Request request;
     MPI_Status status;
-    int ierr =  MPI_ISend(data, count, MPI_CHAR, context_pid, tag, MPI_COMM_WORLD, request);
+    int ierr =  MPI_ISend(data, count, MPI_CHAR, cnxt_pid, tag, MPI_COMM_WORLD, request);
     int working_procs = 0;
 
-
-
-
     while(true){
-        ierr = MPI_Recv(data, count, MPI_CHAR, context_pid, tag, MPI_COMM_WORLD, status);
-        proc_available[context_pid] = true;
-        //obtener datos del MPI_Recv, como;
-        MatrixIndex block;
+        ierr = MPI_Recv(data, count, MPI_CHAR, cnxt_pid, tag, MPI_COMM_WORLD, status);
+        //obtener datos del MPI_Recv:
+        BlockResult* result = (BlockResult*) data; 
         // process result
-        MatrixIndex* newly_available_blocks = get_unlocked_neighbors(block, map);
-        // each newly_available_block in newly_available_blocks: queue.enqueue(newly_available_block)
-        for(int j = 0; j < get_block_count(newly_available_blocks); j++){
-            enqueue(queue, newly_available_blocks[j]);
+        MatrixBlock** newly_available_blocks = update_map(result->block, map); //Se agrega info de la fila y columna del bloque procesado
+        int iter = 0;
+        while(newly_available_blocks[iter] != NULL){
+            enqueue(queue, *newly_available_blocks[iter]); 
         }
+        free(newly_available_blocks);
+        proc_available[cnxt_pid] = true;
         working_procs--;
 
         for(int i = 1; i <= nro_procs; i++){
             if(proc_available[i]){
                 if(isEmpty(queue))
                     break;
-                MatrixIndex block = dequeue(queue);
-                // MPI_Send(block, sizeof(MatrixIndex), MPI_BYTE, i, TAG_BLOCK, MPI_COMM_WORLD);
+                MatrixBlock block = dequeue(queue);
+                MatrixBlock** required_neighbors = get_required_neighbors(block, map);
+                BlockParam* param = create_blockParam(); //TODO
+                MPI_ISend(&param, sizeof(MatrixBlock), MPI_BYTE, i, tag, MPI_COMM_WORLD); 
                 proc_available[i] = false;
                 working_procs++;
+                free(required_neighbors);
             }
         }
 
@@ -92,20 +101,18 @@ int run_master(int argc, char** argv)
             break;
         }
     }
-    // send TAG_TERMINATE to all workers
     
     // traceback(matrix, res, seq1, seq2);
     // print_block_map(map, seq1, seq2);
-
-
-
-
-
+    
+    // send TAG_TERMINATE to all workers
 
 
 
     free(matrix);
-    free(map.visited);
+    free(map);
+    free(proc_available);
+    free(queue);
     free(seq1->data);
     free(seq2->data);
     free(seq1);
@@ -118,25 +125,40 @@ int run_master(int argc, char** argv)
     return EXIT_SUCCESS;
 }
 
-//TODO fix
 void run_worker()
 {
+    MPI_Status status;
+    int flag;
+    int tag;
+    int size;
+    void* msg;
+    int type;
+    int cnxt_pid;
     while(true){
-        // MPI_Status status;
-        // int flag;
-        // MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-        // if(flag){
-        //     if(status.MPI_TAG == TAG_TERMINATE){
-        //         break;
-        //     }
-            //Recibir bloque de datos y procesarlo
-            // int* block_data;
-            // MPI_Recv(block_data, block_size, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // Procesar bloque de datos
-            // int* result = complete_block(block_data, seq1, seq2);
-            // Enviar resultado al master
-            // MPI_Send(result, result_size, MPI_INT, 0, TAG_RESULT, MPI_COMM_WORLD);
-        // }
+        MPI_Recv(&msg, size, type, cnxt_pid, tag, MPI_COMM_WORLD, &status);
+        if(status.MPI_TAG == TAG_TERMINATE){
+            break;
+        }
+        BlockParam* param = (BlockParam*) msg;
+        int* matrix = malloc(param->width * param->height * sizeof(int));
+        load_block(matrix, param);
+        CharArray* seq1 = malloc(sizeof(CharArray));
+        seq1->data = param->seq1;
+        seq1->length = param->width;
+        CharArray* seq2 = malloc(sizeof(CharArray));
+        seq2->data = param->seq2;
+        seq2->length = param->height;
+        int* result = complete_block(matrix, seq1, seq2);
+
+        //TODO al ser asincronico, deberia llamar alguna primitiva antes que chequee si ya se libero el buffer para hacer esto
+        BlockResult* block_result = malloc(sizeof(BlockResult));
+        extract_bottom_row(matrix, block_result);
+        extract_right_column(matrix, block_result);
+        MPI_Request request;
+        MPI_ISend(block_result, sizeof(BlockResult), MPI_BYTE, MASTER_RANK, tag, MPI_COMM_WORLD, request);
+        free(matrix);
+        free(seq1);
+        free(seq2);
     }
     // MatrixCell* res = complete_block(matrix, seq1, seq2);
     // free(res);
