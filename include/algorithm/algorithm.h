@@ -1,15 +1,13 @@
 #ifndef ALGORITHM_H
 #define ALGORITHM_H
 
-
 #include "primitives/primitives.h"
-#include "algorithm/h"
 
 // matrix apunta al comienzo del bloque. Los seqs apuntan a las subsecuencias, limitadas por su length correspondiente
-BlockResult* complete_block(int* matrix, CharArray* seq1, CharArray* seq2);
+BlockResult *complete_block(int *matrix, CharArray *seq1, CharArray *seq2);
 
-void traceback(int* matrix, MatrixCell* entry, CharArray* sequence1, CharArray* sequence2);
+void traceback(int *matrix, MatrixCell *entry, CharArray *sequence1, CharArray *sequence2);
 
-int max_val(int* matrix, int i, int j, char* seq1, char* seq2, int start_seq1, int start_seq2, int row_size);
+int max_val(int *matrix, int i, int j, char *seq1, char *seq2, int start_seq1, int start_seq2, int row_size);
 
 #endif

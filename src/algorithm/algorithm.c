@@ -147,3 +147,5 @@ void traceback(int* matrix, MatrixCell* entry, CharArray* sequence1, CharArray* 
     free(matched_seq1);
     free(matched_seq2);
 }
+
+
