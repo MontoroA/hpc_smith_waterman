@@ -53,12 +53,12 @@ bool enqueue(Queue *q, MatrixBlock value)
 }
 
 
-MatrixBlock dequeue(Queue *q){
+MatrixBlock* dequeue(Queue *q){
     if (isEmpty(q)) {
-        return (MatrixBlock){-1, -1, false}; // Queue is empty
+        return (MatrixBlock*)NULL; // Queue is empty
     }
 
-    MatrixBlock value = q->items[q->front];
+    MatrixBlock* value = &q->items[q->front];
 
     if (q->front == q->rear) {
         q->front = -1;
