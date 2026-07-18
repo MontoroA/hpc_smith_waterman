@@ -48,10 +48,20 @@ void print_blockMap(BlockMap *map)
 
 MatrixBlock *update_BlockMap(MatrixBlock block, BlockMap *map)
 {
-    //Se agrega info de la fila y columna del bloque procesado
+    // Se agrega info de la fila y columna del bloque procesado
     int i = block.i;
     int j = block.j;
+
     map->blocks[i * map->width + j].is_unlocked = true; // marcar bloque como procesado
+
+    // comparte las dimensiones de sus bloques vecinos
+    map->blocks[i * map->width + j].width = block.width;
+    map->blocks[i * map->width + j].height = block.height;
+
+    memcpy(map->blocks[i * map->width + j].row, block.row, BLOCK_WIDTH * sizeof(int));
+    memcpy(map->blocks[i * map->width + j].col, block.col, BLOCK_HEIGHT * sizeof(int));
+    map->blocks[i * map->width + j].diag = block.diag;
+
     MatrixBlock *inf = &map->blocks[(i + 1) * map->width + j];
     MatrixBlock *diag = &map->blocks[(i + 1) * map->width + (j + 1)];
     MatrixBlock *der = &map->blocks[i * map->width + (j + 1)];
@@ -61,23 +71,20 @@ MatrixBlock *update_BlockMap(MatrixBlock block, BlockMap *map)
     // Mirar map para eso, obtener
 }
 
-void load_dependencies(MatrixBlock * block, BlockMap* map){
+void load_dependencies(MatrixBlock *block, BlockMap *map)
+{
     int i = block->i;
     int j = block->j;
-    MatrixBlock **required_neighbors = malloc(3 * sizeof(MatrixBlock *));
 
     // TODO chequear que no me pase de los bordes de la matriz
     MatrixBlock *sup = &map->blocks[(i - 1) * map->width + j];
     MatrixBlock *diag = &map->blocks[(i - 1) * map->width + (j - 1)];
     MatrixBlock *izq = &map->blocks[i * map->width + (j - 1)];
 
-    required_neighbors[0] = sup;
-    required_neighbors[1] = diag;
-    required_neighbors[2] = izq;
-
-    //TODO cargar diagonal, fila y columna de dependencias de block
+    memcpy(block->row, sup->row, BLOCK_WIDTH * sizeof(int));
+    memcpy(block->col, izq->col, BLOCK_HEIGHT * sizeof(int));
+    diag->diag = diag->diag;
 }
-
 
 BlockParam *create_blockParam(MatrixBlock *block, int *upper_row, int *left_col)
 {
@@ -98,24 +105,22 @@ int *create_block(int width, int height)
     return matrix;
 }
 
-void free_block(BlockInfo *block_dscr)
+void free_block(int *matrix)
 {
-    free(block_dscr->matrix);
-    free(block_dscr);
+    free(matrix);
     return;
 }
 
 void load_block(int *matrix, BlockParam *block_param)
 {
-    matrix[0] = block_param->block.last_diagonal;
-    for (int j = 1; j < block_param->width; j++)
+    // cargo la diagonal de la dependencia
+    matrix[0] = block_param->block.diag;
+    // cargo la fila superior de la dependencia
+    memcpy(matrix + 1, block_param->block.row, block_param->block.width * sizeof(int));
+    // cargo el valor de la columna izquierda de la dependencia
+    for (int i = 0; i < block_param->block.height; i++)
     {
-        matrix[j + 1] = block_param->seq1[j];
-    }
-    // cargo el valor de la columna izquierda
-    for (int i = 1; i < block_param->height; i++)
-    {
-        matrix[(i + 1) * block_param->width] = block_param->seq2[i];
+        matrix[(i + 1) * BLOCK_WIDTH] = block_param->seq2[i];
     }
 }
 
@@ -152,7 +157,7 @@ void load_block(int *matrix, BlockParam *block_param)
 
 // block_dscr es el bloque a calcular,
 // num_rows es la cantidad de filas usadas del bloque, num_cols es la cantidad de columnas usadas del bloque
-void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2)
+/*void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2)
 {
     // calcular el bloque
     int *matrix = block_dscr->matrix;
@@ -183,45 +188,30 @@ void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2)
         }
     }
     return;
-}
+}*/
 
 /*NO OLVIDAR QUE PARA LOS CALCULOS DE ABAJO SE TIENE EN CUENTA QUE LA MATRIX TIENE UNA FILA Y UNA COLUMNA EXTRA*/
-// carga en la direccion bottom_row la ultima fila usada del bloque
-void extract_bottom_row(BlockResult *result_msg, int *matrix)
+
+void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2)
 {
-    //TODO
-    //cargar los datos de la ultima fila
-    //que tamaño tiene
-
-
-    // int num_rows = block_dscr->num_rows;
-    // int num_cols = block_dscr->num_cols;
-    // // es mas optimo memcpy cuando se puede usar
-    // memcpy(bottom_row, block_dscr->matrix + num_rows * BLOCK_WIDTH + 1, num_cols * sizeof(int));
-    // return;
-
+    memcpy(result_msg, matrix + len2 * BLOCK_WIDTH + 1, len1 * sizeof(int));
+    return;
 }
 
-// carga en la direccion right_col la ultima columna usada del bloque
-void extract_right_column(BlockResult *block_dscr, int *matrix)
+void extract_right_column(BlockResult *result_msg, int *matrix, int len1, int len2)
 {
-    //TODO
-    // int num_rows = block_dscr->num_rows;
-    // int num_cols = block_dscr->num_cols;
-    // for (int i = 0; i < num_rows; i++)
-    // {
-    //     right_col[i] = block_dscr->matrix[(i + 1) * num_cols]; // i+1 porque la primera fila es la fila de la dependencia superior
-    // }
-    // return;
+    for (int i = 0; i < len2; i++)
+    {
+        result_msg->block.col[i] = matrix[(i + 1) * BLOCK_WIDTH + len1]; // i+1 porque la primera fila es la fila de la dependencia superior
+    }
+    return;
 }
 
-// carga en la direccion last_diagonal la ultima celda de la diagonal del bloque
-// void extract_last_diagonal(BlockInfo *block_dscr, int *last_diagonal)
-// {
-//     int num_rows = block_dscr->num_rows;
-//     int num_cols = block_dscr->num_cols;
-//     *last_diagonal = block_dscr->matrix[num_rows * BLOCK_WIDTH + num_cols]; // la celda diagonal es la ultima celda del bloque
-// }
+void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2)
+{
+    result_msg->block.diag = matrix[len2 * BLOCK_WIDTH + len1]; // la celda diagonal es la ultima celda del bloque
+    return;
+}
 
 BlockParam *create_blockParam()
 {
@@ -229,7 +219,7 @@ BlockParam *create_blockParam()
     return param;
 }
 
-MatrixBlock* get_MatrixBlock(int i, int j, BlockMap *map)
+MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map)
 {
     return &map->blocks[i * map->width + j];
 }
@@ -241,7 +231,7 @@ void free_BlockParam(BlockParam *param)
 
 BlockResult *create_blockResult()
 {
-    BlockResultMessage *msg = malloc(sizeof(BlockResultMessage));
+    BlockResult *msg = malloc(sizeof(BlockResult));
     return msg;
 }
 
