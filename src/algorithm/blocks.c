@@ -21,8 +21,6 @@ BlockMap *create_blockMap(CharArray *seq1, CharArray *seq2)
             blk.i = i_idx;
             blk.j = j_idx;
             blk.is_unlocked = false;
-            blk.start_seq1 = i_idx * BLOCK_WIDTH;
-            blk.start_seq2 = j_idx * BLOCK_HEIGHT;
             // TODO definir el width y height del bloque que son las columnas y filas usadas
         }
     }

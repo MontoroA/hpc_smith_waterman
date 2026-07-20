@@ -72,7 +72,7 @@ void master(int len1, int len2, char *seq1, char *seq2)
                         break;
                     MatrixBlock *block = dequeue(queue);
                     load_dependencies(block, map);
-                    load_BlockParam(param_msg, 0, len1, len2, seq1, seq2); // TODO
+                    load_BlockParam(param_msg, block, 0, len1, len2, seq1, seq2); // TODO
                     send_BlockParam(param_msg, i);
                     proc_available[i] = false;
                     working_procs++;
@@ -110,8 +110,8 @@ void load_BlockParam(BlockParam *msg, MatrixBlock *block, int id, char *seq1, ch
 {
     msg->id = id;
     msg->block = block;
-    memcpy(msg->seq1, seq1 + block->start_seq1, block->width * sizeof(char));
-    memcpy(msg->seq2, seq2 + block->start_seq2, block->height * sizeof(char));
+    memcpy(msg->seq1, seq1 + block->i * BLOCK_WIDTH, block->width * sizeof(char));
+    memcpy(msg->seq2, seq2 + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
 }
 
 int send_BlockParam(BlockParam *msg, int dest)
