@@ -14,6 +14,9 @@ typedef struct
     int i;
     int j;
     bool is_unlocked;
+    // se necesita para mandar el fragmento de las secuencias
+    int start_seq1;
+    int start_seq2;
     // el master debe saber hasta donde va la fila y la columna para pasarselo al slave
     int width;
     int height;
@@ -45,41 +48,6 @@ typedef struct
     MatrixBlock block;
     MatrixCell result;
 } BlockResult;
-
-// typedef struct
-// {
-//     int index_x;
-//     int index_y;
-//     int start_seq1; // donde arranco la seq1 con la que trabajara
-//     int start_seq2; // donde arranco la seq2 con la que trabajara
-//     int num_rows;   // porque los bloques de mas a la derecha pueden no estar 100% utilizados si len1 no es multiplo de N
-//     int num_cols;   // porque los bloques de mas abajo pueden no estar 100% utilizados si len2 no es multiplo de N
-//     int *matrix;    // la matriz del bloque mas el halo de la fila superior y la columna izquierda, ademas de la celda diagonal que esta incluida
-// } BlockInfo;
-
-// // info que se envia al slave para empezar a trabajar
-// typedef struct
-// {
-//     int command;
-//     int index_x;
-//     int index_y;
-//     int start_seq1;                       // donde arranco la seq1 con la que trabajara
-//     int start_seq2;                       // donde arranco la seq2 con la que trabajara
-//     int num_rows;                         // porque los bloques de mas a la derecha pueden no estar 100% utilizados si len1 no es multiplo de N
-//     int num_cols;                         // porque los bloques de mas abajo pueden no estar 100% utilizados si len2 no es multiplo de N
-//     int prev_diag;                        // la celda diagonal que es la dependencia para calcular el bloque
-//     int data[BLOCK_WIDTH + BLOCK_HEIGHT]; // la fila de arriba y la columna izquierda
-//     // DATA SIZE = BLOCK_WIDTH + BLOCK_HEIGHT (PARA FACILITAR MPI)
-// } BlockStartMessage;
-
-// info que se envia al master con los resultados
-// typedef struct
-// {
-//     int index_x;
-//     int index_y;
-//     int last_diag;                        // la celda diagonal que es la dependencia para calcular el bloque siguiente
-//     int data[BLOCK_WIDTH + BLOCK_HEIGHT]; // la ultima fila y la ultima columna del bloque calculado
-// } BlockResultMessage;
 
 BlockMap *create_blockMap(CharArray *seq1, CharArray *seq2);
 
@@ -118,6 +86,8 @@ void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int l
 void free_BlockParam(BlockParam *param);
 
 BlockResult *create_blockResult();
+
+void load_blockResult(BlockResult *result_msg, int *matrix, BlockResult *result, BlockParam *param_msg);
 
 void free_BlockResult(BlockResult *msg);
 

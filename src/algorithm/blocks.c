@@ -21,6 +21,9 @@ BlockMap *create_blockMap(CharArray *seq1, CharArray *seq2)
             blk.i = i_idx;
             blk.j = j_idx;
             blk.is_unlocked = false;
+            blk.start_seq1 = i_idx * BLOCK_WIDTH;
+            blk.start_seq2 = j_idx * BLOCK_HEIGHT;
+            // TODO definir el width y height del bloque que son las columnas y filas usadas
         }
     }
     BlockMap *block_map = malloc(sizeof(BlockMap));
@@ -235,18 +238,25 @@ BlockResult *create_blockResult()
     return msg;
 }
 
+void load_blockResult(BlockResult *result_msg, int *matrix, BlockResult *result, BlockParam *param_msg)
+{
+    result_msg->result.i = result->result.i;
+    result_msg->result.j = result->result.j;
+    result_msg->result.max_score = result->result.max_score;
+
+    result_msg->block.i = param_msg->block.i;
+    result_msg->block.j = param_msg->block.j;
+
+    // OBS: el bloque comparte el ancho del bloque de arriba a el y el alto del bloque de la izquierda a el
+    result_msg->block.width = param_msg->block.width;
+    result_msg->block.height = param_msg->block.height;
+
+    extract_bottom_row(result_msg, matrix, param_msg->block.width, param_msg->block.height);
+    extract_right_column(result_msg, matrix, param_msg->block.width, param_msg->block.height);
+    extract_last_diagonal(result_msg, matrix, param_msg->block.width, param_msg->block.height);
+}
+
 void free_BlockResult(BlockResult *msg)
 {
     free(msg);
 }
-
-// void extract_bottom_row(int *matrix, BlockResult *block_dscr)
-// {
-//     // TODO
-// }
-
-// carga en la direccion right_col la ultima columna usada del bloque
-// void extract_right_column(int *matrix, BlockResult *block_dscr)
-// {
-//     // TODO
-// }

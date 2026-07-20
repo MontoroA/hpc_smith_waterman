@@ -57,7 +57,7 @@ void print_matrix(int *matrix, int rows, int cols)
     }
 }
 
-BlockResult *complete_block(int *matrix, CharArray *sequence1, CharArray *sequence2)
+void complete_block(int *matrix, BlockResult *result, CharArray *sequence1, CharArray *sequence2)
 {
     char *seq1 = sequence1->data;
     char *seq2 = sequence2->data;
@@ -104,14 +104,11 @@ BlockResult *complete_block(int *matrix, CharArray *sequence1, CharArray *sequen
         }
     }
 
-    BlockResult *result = malloc(sizeof(BlockResult));
     result->result.i = max_i;
     result->result.j = max_j;
     result->result.max_score = max_score;
 
     // print_matrix(matrix, len1 + 1, len2 + 1);
-
-    return result;
 }
 
 void traceback(int *matrix, MatrixCell *entry, CharArray *sequence1, CharArray *sequence2)
