@@ -14,9 +14,6 @@ typedef struct
     int i;
     int j;
     bool is_unlocked;
-    // se necesita para mandar el fragmento de las secuencias
-    int start_seq1;
-    int start_seq2;
     // el master debe saber hasta donde va la fila y la columna para pasarselo al slave
     int width;
     int height;
