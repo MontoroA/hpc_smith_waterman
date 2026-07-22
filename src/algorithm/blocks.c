@@ -4,12 +4,12 @@
 #include "algorithm/blocks.h"
 #include "algorithm/algorithm.h"
 
-BlockMap *create_blockMap(CharArray *seq1, CharArray *seq2)
+BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
 {
     // last row/column of blocks might have smaller size
-    // TODO por que -1?
-    int height = (seq1->length + BLOCK_HEIGHT - 1) / BLOCK_HEIGHT;
-    int width = (seq2->length + BLOCK_WIDTH - 1) / BLOCK_WIDTH;
+    int width = (seq1->length % BLOCK_WIDTH == 0) ? seq1->length / BLOCK_WIDTH : (seq1->length / BLOCK_WIDTH) + 1;
+    int height = (seq2->length % BLOCK_HEIGHT == 0) ? seq2->length / BLOCK_HEIGHT : (seq2->length / BLOCK_HEIGHT) + 1;
+
     int length = height * width;
 
     MatrixBlock *map = malloc(length * sizeof(MatrixBlock));
@@ -21,7 +21,26 @@ BlockMap *create_blockMap(CharArray *seq1, CharArray *seq2)
             blk.i = i_idx;
             blk.j = j_idx;
             blk.is_unlocked = false;
-            // TODO definir el width y height del bloque que son las columnas y filas usadas
+
+            int start_seq1 = i_idx * BLOCK_WIDTH;
+            if (start_seq1 + BLOCK_WIDTH <= seq1->length)
+            {
+                blk.width = BLOCK_WIDTH;
+            }
+            else
+            {
+                blk.width = seq1->length - start_seq1;
+            }
+
+            int start_seq2 = j_idx * BLOCK_HEIGHT;
+            if (start_seq2 + BLOCK_HEIGHT <= seq2->length)
+            {
+                blk.height = BLOCK_HEIGHT;
+            }
+            else
+            {
+                blk.height = seq2->length - start_seq2;
+            }
         }
     }
     BlockMap *block_map = malloc(sizeof(BlockMap));
@@ -55,21 +74,14 @@ MatrixBlock *update_BlockMap(MatrixBlock block, BlockMap *map)
 
     map->blocks[i * map->width + j].is_unlocked = true; // marcar bloque como procesado
 
-    // comparte las dimensiones de sus bloques vecinos
-    map->blocks[i * map->width + j].width = block.width;
-    map->blocks[i * map->width + j].height = block.height;
-
     memcpy(map->blocks[i * map->width + j].row, block.row, BLOCK_WIDTH * sizeof(int));
     memcpy(map->blocks[i * map->width + j].col, block.col, BLOCK_HEIGHT * sizeof(int));
     map->blocks[i * map->width + j].diag = block.diag;
+}
 
-    MatrixBlock *inf = &map->blocks[(i + 1) * map->width + j];
-    MatrixBlock *diag = &map->blocks[(i + 1) * map->width + (j + 1)];
-    MatrixBlock *der = &map->blocks[i * map->width + (j + 1)];
-
-    // TODO
-    // Mirar el bloque recibido: puede habilitar a los siguientes: abajo, derecha, siguiente en diagonal
-    // Mirar map para eso, obtener
+MatrixBlock *get_BlockMap(int i, int j, BlockMap *map)
+{
+    return &map->blocks[i * map->width + j];
 }
 
 void load_dependencies(MatrixBlock *block, BlockMap *map)
@@ -77,27 +89,21 @@ void load_dependencies(MatrixBlock *block, BlockMap *map)
     int i = block->i;
     int j = block->j;
 
-    // TODO chequear que no me pase de los bordes de la matriz
-    MatrixBlock *sup = &map->blocks[(i - 1) * map->width + j];
-    MatrixBlock *diag = &map->blocks[(i - 1) * map->width + (j - 1)];
-    MatrixBlock *izq = &map->blocks[i * map->width + (j - 1)];
-
-    memcpy(block->row, sup->row, BLOCK_WIDTH * sizeof(int));
-    memcpy(block->col, izq->col, BLOCK_HEIGHT * sizeof(int));
-    diag->diag = diag->diag;
-}
-
-BlockParam *create_blockParam(MatrixBlock *block, int *upper_row, int *left_col)
-{
-    // BlockParam* block_param = malloc(sizeof(BlockParam) + (BLOCK_WIDTH + BLOCK_HEIGHT) * sizeof(int));
-    // block_param->block = *block;
-    // for(int j = 0; j < BLOCK_WIDTH; j++) {
-    //     block_param->uppper_row[j] = upper_row[j];
-    // }
-    // for(int i = 0; i < BLOCK_HEIGHT; i++) {
-    //     block_param->left_col[i] = left_col[i];
-    // }
-    // return block_param;
+    if ((i - 1) >= 0 && (j - 1) >= 0)
+    {
+        MatrixBlock *diag = &map->blocks[(i - 1) * map->width + (j - 1)];
+        diag->diag = diag->diag;
+    }
+    if ((i - 1) >= 0)
+    {
+        MatrixBlock *sup = &map->blocks[(i - 1) * map->width + j];
+        memcpy(block->row, sup->row, BLOCK_WIDTH * sizeof(int));
+    }
+    if ((j - 1) >= 0)
+    {
+        MatrixBlock *izq = &map->blocks[i * map->width + (j - 1)];
+        memcpy(block->col, izq->col, BLOCK_HEIGHT * sizeof(int));
+    }
 }
 
 int *create_block(int width, int height)
@@ -124,72 +130,6 @@ void load_block(int *matrix, BlockParam *block_param)
         matrix[(i + 1) * BLOCK_WIDTH] = block_param->seq2[i];
     }
 }
-
-// TODO este metodo va si el worker ya tiene toda la secuencia
-// Carga en un bloque las dependencias, su indice de bloque, y cuantas filas y columnas del bloque se van a usar.
-// void load_block(BlockInfo *block_dscr, int index_x, int index_y, int start_seq1, int start_seq2, int num_rows,
-//                 int num_cols, int *top_row, int *left_col, int prev_diag)
-// {
-//     // cargo el indice del bloque en la matriz de bloques
-//     block_dscr->index_x = index_x;
-//     block_dscr->index_y = index_y;
-
-//     // cargo el indice de la secuencia 1 y 2 donde empieza el bloque
-//     block_dscr->start_seq1 = start_seq1;
-//     block_dscr->start_seq2 = start_seq2;
-
-//     // cargo la cantidad de filas y columnas usadas del bloque
-//     block_dscr->num_rows = num_rows;
-//     block_dscr->num_cols = num_cols;
-
-//     // cargo el valor de la fila superior, memcpy es mas rapido
-//     memcpy(block_dscr->matrix + 1, top_row, num_cols * sizeof(int));
-
-//     // cargo el valor de la columna izquierda
-//     for (int i = 0; i < num_rows; i++)
-//     {
-//         block_dscr->matrix[(i + 1) * BLOCK_WIDTH] = left_col[i];
-//     }
-
-//     // cargo el valor de la diagonal anterior
-//     block_dscr->matrix[0] = prev_diag;
-//     return;
-// }
-
-// block_dscr es el bloque a calcular,
-// num_rows es la cantidad de filas usadas del bloque, num_cols es la cantidad de columnas usadas del bloque
-/*void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2)
-{
-    // calcular el bloque
-    int *matrix = block_dscr->matrix;
-    int start_seq1 = block_dscr->start_seq1;
-    int start_seq2 = block_dscr->start_seq2;
-    int num_rows = block_dscr->num_rows;
-    int num_cols = block_dscr->num_cols;
-
-    // Complete the matrix
-    int tope_block_j = num_cols + 1; // va hasta la ultima columna usada del bloque
-    int max_i = 0, max_j = 0, max_score = 0;
-    int k;
-    int tope = num_rows + num_cols;
-    for (k = 0; k <= tope; k++)
-    {
-        int init_i = min(k, num_rows);
-        int stop_i = max(1, k - num_cols + 2);
-        for (int i = init_i; i >= stop_i; i--)
-        {
-            int j = k - i;
-            matrix[i * tope_block_j + j] = max_val(matrix, i, j, seq1, seq2, start_seq1, start_seq2, tope_block_j);
-            if (matrix[i * tope_block_j + j] > max_score)
-            {
-                max_score = matrix[i * tope_block_j + j];
-                max_i = i;
-                max_j = j;
-            }
-        }
-    }
-    return;
-}*/
 
 /*NO OLVIDAR QUE PARA LOS CALCULOS DE ABAJO SE TIENE EN CUENTA QUE LA MATRIX TIENE UNA FILA Y UNA COLUMNA EXTRA*/
 

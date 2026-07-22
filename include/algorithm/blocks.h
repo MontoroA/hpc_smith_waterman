@@ -17,9 +17,8 @@ typedef struct
     // el master debe saber hasta donde va la fila y la columna para pasarselo al slave
     int width;
     int height;
-    // TODO requerido refactor. Por ahora:
-    // se usan cuando MatrixBlock es param, son la row y col dependencias para procesar el bloque (i,j)
-    // se usan cuando MatrixBlock es result, tienen la ultima col y la ultima row del bloque (i,j)
+    // En BlockParam son las dependencias, en BlockResult son las que se van a pasar al master
+    // Tambien en el Map son las dependencias que sus vecinos usaran de el
     int row[BLOCK_WIDTH];
     int col[BLOCK_HEIGHT];
     int diag;
@@ -35,7 +34,6 @@ typedef struct
 typedef struct
 {
     MatrixBlock block;
-    int id;
     char seq1[BLOCK_HEIGHT];
     char seq2[BLOCK_WIDTH];
 } BlockParam;
@@ -46,7 +44,7 @@ typedef struct
     MatrixCell result;
 } BlockResult;
 
-BlockMap *create_blockMap(CharArray *seq1, CharArray *seq2);
+BlockMap *create_Map(CharArray *seq1, CharArray *seq2);
 
 MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map);
 

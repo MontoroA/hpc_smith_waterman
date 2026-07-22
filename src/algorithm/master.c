@@ -11,7 +11,7 @@ void master(int len1, int len2, char *seq1, char *seq2)
 {
 
     // preparar sus estructuras de control, mapa de bloques, etc
-    BlockMap *map = create_block_map(seq1, seq2);
+    BlockMap *map = create_Map(seq1, seq2);
     Queue *queue = createQueue(max(seq1->length, seq2->length));
 
     int nro_procs;
@@ -26,19 +26,11 @@ void master(int len1, int len2, char *seq1, char *seq2)
     BlockParam *param_msg = create_blockParam();
     BlockResult *result_msg = create_blockResult();
 
-    for (int j = 0; j < (1 + len2); j++)
-    {
-        param_msg->block.row[j] = 0;
-    }
-    // and first column
-    for (int i = 0; i < (1 + len1); i++)
-    {
-        param_msg->block.col[i] = 0;
-    }
-
     int cnxt_pid = 1;
 
-    load_BlockParam(param_msg, 0, len1, len2, seq1, seq2);
+    MatrixBlock *block = get_Block(map, 0, 0);
+
+    load_BlockParam(param_msg, block, seq1, seq2);
 
     int count = 0;
     MPI_Request request;
@@ -53,14 +45,12 @@ void master(int len1, int len2, char *seq1, char *seq2)
         receive_BlockResult(result_msg, &cnxt_pid, &status);
         if (status.MPI_TAG == TAG_BLOCK_RESULT)
         {
-            // process result
-            MatrixBlock **newly_available_blocks = update_BlockMap(result_msg->block, map);
-            int iter = 0;
-            while (newly_available_blocks[iter] != NULL)
-            {
-                enqueue(queue, *newly_available_blocks[iter]);
-            }
-            free(newly_available_blocks);
+            // actualizo el bloque en el mapa
+            update_BlockMap(result_msg->block, map);
+
+            // agrego a la cola los nuevos bloques a procesar
+            enqueue_newBlocks(queue, map, &result_msg->block);
+
             proc_available[cnxt_pid] = true;
             working_procs--;
 
@@ -70,9 +60,9 @@ void master(int len1, int len2, char *seq1, char *seq2)
                 {
                     if (isEmpty(queue))
                         break;
-                    MatrixBlock *block = dequeue(queue);
+                    block = dequeue(queue);
                     load_dependencies(block, map);
-                    load_BlockParam(param_msg, block, 0, len1, len2, seq1, seq2); // TODO
+                    load_BlockParam(param_msg, block, len1, len2, seq1, seq2);
                     send_BlockParam(param_msg, i);
                     proc_available[i] = false;
                     working_procs++;
@@ -106,9 +96,14 @@ void master(int len1, int len2, char *seq1, char *seq2)
     free(queue);
 }
 
-void load_BlockParam(BlockParam *msg, MatrixBlock *block, int id, char *seq1, char *seq2)
+MatrixBlock *get_Block(BlockMap *map, int i, int j)
 {
-    msg->id = id;
+
+    return &map->blocks[i * map->width + j];
+}
+
+void load_BlockParam(BlockParam *msg, MatrixBlock *block, char *seq1, char *seq2)
+{
     msg->block = block;
     memcpy(msg->seq1, seq1 + block->i * BLOCK_WIDTH, block->width * sizeof(char));
     memcpy(msg->seq2, seq2 + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
@@ -121,7 +116,26 @@ int send_BlockParam(BlockParam *msg, int dest)
 
 void receive_BlockResult(BlockResult *msg, int *cnxt_pid, MPI_Status *status)
 {
-    char *buffer; // TODO se puede poner msg nomas en la primitiva de recv?
-    MPI_Recv(buffer, sizeof(BlockResult), MPI_BYTE, cnxt_pid, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
-    msg = (BlockResult *)buffer;
+    MPI_Recv(msg sizeof(BlockResult), MPI_BYTE, cnxt_pid, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
+}
+
+void enqueue_newBlocks(Queue *queue, BlockMap *map, MatrixBlock *block)
+{
+    if (block->i < map->height - 1 && block->j < map->width - 1)
+    {
+        MatrixBlock *diag = get_MatrixBlock(block->i + 1, block->j + 1, map);
+        enqueue(queue, diag);
+    }
+
+    if (block->j < map->width - 1)
+    {
+        MatrixBlock *der = get_MatrixBlock(block->i, block->j + 1, map);
+        enqueue(queue, der);
+    }
+
+    if (block->i < map->height - 1)
+    {
+        MatrixBlock *inf = get_MatrixBlock(block->i + 1, block->j, map);
+        enqueue(queue, inf);
+    }
 }
