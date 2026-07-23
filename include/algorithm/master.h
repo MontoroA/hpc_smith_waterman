@@ -1,13 +1,19 @@
-#include "blocks.h"
+#ifndef MASTER_H
+#define MASTER_H
 
-void master(int len1, int len2, char *seq1, char *seq2);
+#include "algorithm/blocks.h"
+#include "algorithm/primitives/queue.h"
+
+void master(CharArray *seq1, CharArray *seq2);
 
 MatrixBlock *get_Block(BlockMap *map, int i, int j);
 
-void load_BlockParam(BlockParam *msg, MatrixBlock *block, char *seq1, char *seq2);
+// void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2);
 
-void send_BlockParam(BlockParam *msg, int dest);
+// void send_BlockParam(BlockParam *msg, int dest);
 
 void receive_BlockResult(BlockResult *msg, int *cnxt_pid, MPI_Status *status);
 
 void enqueue_newBlocks(Queue *queue, BlockMap *map, MatrixBlock *block);
+
+#endif

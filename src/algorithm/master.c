@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <string.h>
 
 #include "algorithm/master.h"
 #include "algorithm/blocks.h"
@@ -6,8 +7,74 @@
 #include "algorithm/primitives/primitives.h"
 #include "algorithm/primitives/queue.h"
 
-// PROCESO MASTER
-void master(int len1, int len2, char *seq1, char *seq2)
+
+
+MatrixBlock *get_Block(BlockMap *map, int i, int j)
+{
+    return &map->blocks[i * map->width + j];
+}
+
+
+void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2)
+{
+    msg->block = *block;
+    memcpy(msg->seq1, seq1->data + block->i * BLOCK_WIDTH, block->width * sizeof(char));
+    memcpy(msg->seq2, seq2->data + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
+}
+
+
+int send_BlockParam(BlockParam *msg, int dest)
+{
+    MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, TAG_BLOCK_PARAM, MPI_COMM_WORLD);
+    return 0; //TODO por que un int?
+}
+
+
+void receive_BlockResult(BlockResult *msg, int *cnxt_pid, MPI_Status *status)
+{
+    MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, *cnxt_pid, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
+}
+
+
+void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
+{
+    int i = block->i;
+    int j = block->j;
+    int width = map->width;
+    int height = map->height;
+
+    if (i < (height - 1) && j < (width - 1))
+    {
+        MatrixBlock *diag = get_MatrixBlock(i + 1, j + 1, map);
+        if(block_is_ready(diag, map)){
+            load_dependencies(diag,map);
+            enqueue(queue, *diag);
+        }
+    }
+    
+    if (j < (width - 1))
+    {
+        MatrixBlock *der = get_MatrixBlock(i + 1 , j , map);
+        if(block_is_ready(der, map)){
+            load_dependencies(der,map);
+            enqueue(queue, *der);
+        }
+    }
+    
+    if (i < (height - 1))
+    {
+        MatrixBlock *inf = get_MatrixBlock(i , j + 1, map);
+        if(block_is_ready(inf, map)){
+            load_dependencies(inf,map);
+            enqueue(queue, *inf);
+        }
+    }
+}
+
+
+
+
+void master(CharArray *seq1, CharArray *seq2)
 {
 
     // preparar sus estructuras de control, mapa de bloques, etc
@@ -32,8 +99,8 @@ void master(int len1, int len2, char *seq1, char *seq2)
 
     load_BlockParam(param_msg, block, seq1, seq2);
 
-    int count = 0;
-    MPI_Request request;
+    // int count = 0;
+    // MPI_Request request;
     MPI_Status status;
 
     send_BlockParam(param_msg, cnxt_pid);
@@ -49,7 +116,7 @@ void master(int len1, int len2, char *seq1, char *seq2)
             update_BlockMap(result_msg->block, map);
 
             // agrego a la cola los nuevos bloques a procesar
-            enqueue_newBlocks(queue, map, &result_msg->block);
+            enqueue_ready_blocks(queue, map, &result_msg->block);
 
             proc_available[cnxt_pid] = true;
             working_procs--;
@@ -61,8 +128,7 @@ void master(int len1, int len2, char *seq1, char *seq2)
                     if (isEmpty(queue))
                         break;
                     block = dequeue(queue);
-                    load_dependencies(block, map);
-                    load_BlockParam(param_msg, block, len1, len2, seq1, seq2);
+                    load_BlockParam(param_msg, block, seq1, seq2);
                     send_BlockParam(param_msg, i);
                     proc_available[i] = false;
                     working_procs++;
@@ -94,48 +160,4 @@ void master(int len1, int len2, char *seq1, char *seq2)
     free(map);
     free(proc_available);
     free(queue);
-}
-
-MatrixBlock *get_Block(BlockMap *map, int i, int j)
-{
-
-    return &map->blocks[i * map->width + j];
-}
-
-void load_BlockParam(BlockParam *msg, MatrixBlock *block, char *seq1, char *seq2)
-{
-    msg->block = block;
-    memcpy(msg->seq1, seq1 + block->i * BLOCK_WIDTH, block->width * sizeof(char));
-    memcpy(msg->seq2, seq2 + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
-}
-
-int send_BlockParam(BlockParam *msg, int dest)
-{
-    MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, TAG_BLOCK_PARAM, MPI_COMM_WORLD);
-}
-
-void receive_BlockResult(BlockResult *msg, int *cnxt_pid, MPI_Status *status)
-{
-    MPI_Recv(msg sizeof(BlockResult), MPI_BYTE, cnxt_pid, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
-}
-
-void enqueue_newBlocks(Queue *queue, BlockMap *map, MatrixBlock *block)
-{
-    if (block->i < map->height - 1 && block->j < map->width - 1)
-    {
-        MatrixBlock *diag = get_MatrixBlock(block->i + 1, block->j + 1, map);
-        enqueue(queue, diag);
-    }
-
-    if (block->j < map->width - 1)
-    {
-        MatrixBlock *der = get_MatrixBlock(block->i, block->j + 1, map);
-        enqueue(queue, der);
-    }
-
-    if (block->i < map->height - 1)
-    {
-        MatrixBlock *inf = get_MatrixBlock(block->i + 1, block->j, map);
-        enqueue(queue, inf);
-    }
 }

@@ -12,7 +12,7 @@
 #include "algorithm/slave.h"
 
 
-void run_master(int argc, char **argv)
+int run_master(int argc, char **argv)
 {
     double start = MPI_Wtime();
     int mode = read_mode(argc, argv);
@@ -32,7 +32,7 @@ void run_master(int argc, char **argv)
     CharArray *seq2 = seqs[1];
 
     // nueva funcion que representa al master
-    master(seq1->length, seq2->length, seq1->data, seq2->data);
+    master(seq1, seq2);
 
     free(seq1->data);
     free(seq2->data);
@@ -46,7 +46,8 @@ void run_master(int argc, char **argv)
 }
 
 // PROCESO SLAVE
-void run_worker()
+int run_worker()
 {
     slave();
+    return EXIT_SUCCESS;
 }

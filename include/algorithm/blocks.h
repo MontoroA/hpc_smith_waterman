@@ -1,6 +1,10 @@
+#ifndef BLOCKS_H
+#define BLOCKS_H
+
+#include <stdlib.h> 
+
 #include "hpc/mpi_handler.h"
 #include "algorithm/primitives/primitives.h"
-#include <stdlib.h>
 
 typedef struct
 {
@@ -50,13 +54,15 @@ MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map);
 
 void print_blockMap(BlockMap *map);
 
-MatrixBlock *update_BlockMap(MatrixBlock block, BlockMap *map);
+void update_BlockMap(MatrixBlock block, BlockMap *map);
 
 MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
 
 BlockParam *create_blockParam();
 
-BlockParam *load_blockParam(MatrixBlock *block, int *upper_row, int *left_col);
+// BlockParam *load_blockParam(MatrixBlock *block, int *upper_row, int *left_col);
+
+bool block_is_ready(MatrixBlock *block, BlockMap *map);
 
 void load_dependencies(MatrixBlock *block, BlockMap *map);
 
@@ -82,10 +88,13 @@ void free_BlockParam(BlockParam *param);
 
 BlockResult *create_blockResult();
 
-void load_blockResult(BlockResult *result_msg, int *matrix, BlockResult *result, BlockParam *param_msg);
+void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell, BlockParam *param_msg);
 
 void free_BlockResult(BlockResult *msg);
 
 // void extract_bottom_row(BlockInfo* block_dscr);
 
 // void extract_right_column(BlockInfo* block_dscr);
+
+
+#endif

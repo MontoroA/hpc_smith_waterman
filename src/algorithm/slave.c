@@ -1,15 +1,17 @@
+#include <stdio.h>
 #include <mpi.h>
 
 #include "algorithm/slave.h"
 #include "algorithm/algorithm.h"
 #include "hpc/mpi_handler.h"
+#include "algorithm/blocks.h"
 
 void slave()
 {
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
     int *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
-    BlockResult *result = malloc(sizeof(BlockResult));
+    MatrixCell *max_cell = malloc(sizeof(MatrixCell));
 
     MPI_Status status;
 
@@ -40,12 +42,16 @@ void slave()
             seq2->data = param_msg->seq2;
             seq2->length = param_msg->block.height;
 
-            complete_block(matrix, result, seq1, seq2);
+            //obtengo mi rank
+            int rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            printf("Worker %d procesa el bloque (%d, %d) ", rank, param_msg->block.i, param_msg->block.j);
+            complete_block(matrix, max_cell, seq1, seq2);
 
-            load_resultBlock(result_msg, matrix, result, param_msg);
+            load_blockResult(result_msg, matrix, max_cell, param_msg);
 
             MPI_Send(result_msg,
-                     sizeof(BlockResultMessage),
+                     sizeof(BlockResult),
                      MPI_BYTE,
                      MASTER_RANK,
                      TAG_BLOCK_RESULT,
@@ -55,7 +61,7 @@ void slave()
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
     free_block(matrix);
-    free(result);
+    free(max_cell);
     free(seq1);
     free(seq2);
 }

@@ -11,6 +11,6 @@
 #define MASTER_RANK 0
 
 int run_master(int argc, char **argv);
-void run_worker();
+int run_worker();
 
 #endif

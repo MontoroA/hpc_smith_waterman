@@ -2,7 +2,13 @@ CC = mpicc
 CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude 
 LDFLAGS = -fopenmp -lm
 
-SRC = src/main.c src/utils/io.c src/utils/sequences.c src/algorithm/algorithm.c src/algorithm/primitives/list.c src/algorithm/primitives/primitives.c src/hpc/mpi_handler.c src/hpc/mpi_utils.c src/algorithm/primitives/queue.c
+MAIN_SRC = src/main.c
+UTILS_SRC = src/utils/io.c src/utils/sequences.c
+ALGORITHM_SRC = src/algorithm/algorithm.c src/algorithm/blocks.c src/algorithm/master.c src/algorithm/slave.c
+PRIMITIVES_SRC = src/algorithm/primitives/list.c src/algorithm/primitives/queue.c
+HPC_SRC = src/hpc/mpi_handler.c
+
+SRC = $(MAIN_SRC) $(UTILS_SRC) $(ALGORITHM_SRC) $(PRIMITIVES_SRC) $(HPC_SRC)
 
 OBJDIR = build
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))
