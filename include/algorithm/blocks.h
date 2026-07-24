@@ -2,7 +2,7 @@
 #define BLOCKS_H
 
 #include <stdlib.h>
-
+#include <mpi.h>
 #include "hpc/mpi_handler.h"
 #include "algorithm/primitives/primitives.h"
 
@@ -26,6 +26,7 @@ typedef struct
     int row[BLOCK_WIDTH];
     int col[BLOCK_HEIGHT];
     int diag;
+    MatrixCell max_cell;
 } MatrixBlock;
 
 typedef struct
@@ -74,11 +75,9 @@ BlockParam *create_blockParam();
 
 TracebackResult *create_tracebackResult();
 
-void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2)
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2);
 
-    void free_TracebackResult(TracebackResult *msg);
-
-// BlockParam *load_blockParam(MatrixBlock *block, int *upper_row, int *left_col);
+void free_TracebackResult(TracebackResult *msg);
 
 bool block_is_ready(MatrixBlock *block, BlockMap *map);
 
@@ -90,17 +89,11 @@ void free_block(int *block_dscr);
 
 void load_block(int *matrix, BlockParam *block_param);
 
-// void load_block(BlockInfo *block_dscr, int index_x, int index_y, int start_seq1, int start_seq2, int num_rows, int num_cols, int *top_row, int *left_col, int prev_diag);
-
-// void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2);
-
 void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2);
 
 void extract_right_column(BlockResult *result_msg, int *matrix, int len1, int len2);
 
 void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2);
-
-// BlockStartMessage *create_block_start_message();
 
 void free_BlockParam(BlockParam *param);
 
@@ -110,8 +103,20 @@ void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell
 
 void free_BlockResult(BlockResult *msg);
 
-// void extract_bottom_row(BlockInfo* block_dscr);
+MatrixBlock *get_TracebackStartingBlock(BlockMap *map);
 
-// void extract_right_column(BlockInfo* block_dscr);
+void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2);
+
+void send_BlockParam(BlockParam *msg, int dest, int tag);
+
+void receive_BlockResult(BlockResult *msg, int *cnxt_pid, MPI_Status *status);
+
+void receive_TracebackResult(TracebackResult *msg, int *cnxt_pid, MPI_Status *status);
+
+void send_TracebackResult(TracebackResult *msg, int tag);
+
+void send_BlockResult(BlockResult *msg);
+
+void receive_BlockParam(BlockParam *msg, MPI_Status *status);
 
 #endif

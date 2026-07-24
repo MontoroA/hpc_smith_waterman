@@ -33,13 +33,7 @@ void slave()
     while (true)
     {
         printf("(process %d) waiting for data \n", rank);
-        MPI_Recv(param_msg,
-                 sizeof(BlockParam),
-                 MPI_BYTE,
-                 MASTER_RANK,
-                 MPI_ANY_TAG,
-                 MPI_COMM_WORLD,
-                 &status);
+        receive_BlockParam(param_msg, &status);
 
         if (status.MPI_TAG == TAG_TERMINATE)
         {
@@ -47,71 +41,58 @@ void slave()
             break;
         }
 
-        if (status.MPI_TAG == TAG_BLOCK_PARAM)
+        seq1->data = param_msg->seq1;
+        seq1->length = param_msg->block.width;
+        seq2->data = param_msg->seq2;
+        seq2->length = param_msg->block.height;
+
+        if (status.MPI_TAG != TAG_TRACEBACK_RUN)
         {
             printf("(process %d) receives block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
             load_block(matrix, param_msg);
 
-            seq1->data = param_msg->seq1;
-            seq1->length = param_msg->block.width;
-            seq2->data = param_msg->seq2;
-            seq2->length = param_msg->block.height;
-
             printf("(process %d) working on block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
             complete_block(matrix, max_cell, seq1, seq2);
 
-            load_blockResult(result_msg, matrix, max_cell, param_msg);
-            printf("(process %d) sending result for block (%d, %d) with max score %d \n", rank, result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
-            MPI_Send(result_msg,
-                     sizeof(BlockResult),
-                     MPI_BYTE,
-                     MASTER_RANK,
-                     TAG_BLOCK_RESULT,
-                     MPI_COMM_WORLD);
-        }
-
-        if (status.MPI_TAG == TAG_TRACEBACK_RUN || status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR)
-        {
-            printf("(process %d) receives block (%d, %d) for traceback\n", rank, param_msg->block.i, param_msg->block.j);
-            load_block(matrix, param_msg);
-
-            seq1->data = param_msg->seq1;
-            seq1->length = param_msg->block.width;
-            seq2->data = param_msg->seq2;
-            seq2->length = param_msg->block.height;
-
-            printf("(process %d) working on traceback for block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
-            complete_block(matrix, max_cell, seq1, seq2);
-
-            traceback_msg->block_i = param_msg->block.i;
-            traceback_msg->block_j = param_msg->block.j;
+            if (status.MPI_TAG == TAG_BLOCK_PARAM)
+            {
+                load_blockResult(result_msg, matrix, max_cell, param_msg);
+                printf("(process %d) sending result for block (%d, %d) with max score %d \n", rank, result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
+                send_BlockResult(result_msg);
+            }
 
             if (status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR)
             {
+                // aviso al master que este bloque ya se calculo por adelantado
                 printf("(process %d) sending traceback neighbour ready for block (%d, %d)\n", rank, traceback_msg->block_i, traceback_msg->block_j);
-                MPI_Send(traceback_msg,
-                         sizeof(TracebackResult),
-                         MPI_BYTE,
-                         MASTER_RANK,
-                         TAG_TRACEBACK_NEIGHBOUR_READY,
-                         MPI_COMM_WORLD);
+                send_TracebackResult(traceback_msg, TAG_TRACEBACK_NEIGHBOUR_READY);
             }
-            else
+
+            if (status.MPI_TAG == TAG_TRACEBACK_FIRST_RUN)
             {
+                // es la celda por la que debemos arrancar el traceback en este bloque
+                starting_cell = &param_msg->block.max_cell;
                 next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, seq1->data, seq2->data);
 
                 load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
 
                 printf("(process %d) sending traceback result for block (%d, %d) \n", rank, traceback_msg->block_i, traceback_msg->block_j);
-                MPI_Send(traceback_msg,
-                         sizeof(TracebackResult),
-                         MPI_BYTE,
-                         MASTER_RANK,
-                         TAG_TRACEBACK_RESULT,
-                         MPI_COMM_WORLD);
+                send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
             }
         }
+        else
+        {
+            // es la celda por la que debemos arrancar el traceback en este bloque
+            starting_cell = &param_msg->block.max_cell;
+            next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, seq1->data, seq2->data);
+
+            load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
+
+            printf("(process %d) sending traceback result for block (%d, %d) \n", rank, traceback_msg->block_i, traceback_msg->block_j);
+            send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
+        }
     }
+
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
     free_TracebackResult(traceback_msg);

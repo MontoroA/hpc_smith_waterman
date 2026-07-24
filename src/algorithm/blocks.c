@@ -78,6 +78,7 @@ void update_BlockMap(MatrixBlock block, BlockMap *map)
     memcpy(updated_block->row, block.row, BLOCK_WIDTH * sizeof(int));
     memcpy(updated_block->col, block.col, BLOCK_HEIGHT * sizeof(int));
     updated_block->diag = block.diag;
+    updated_block->max_cell = block.max_cell;
 }
 
 bool block_is_ready(MatrixBlock *block, BlockMap *map)
@@ -259,4 +260,67 @@ void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_c
 void free_TracebackResult(TracebackResult *msg)
 {
     free(msg);
+}
+
+MatrixBlock *get_TracebackStartingBlock(BlockMap *map)
+{
+    int max_val = 0;
+    MatrixBlock *block = NULL;
+
+    for (int i = 0; i < map->height; i++)
+    {
+        for (int j = 0; j < map->width; j++)
+        {
+            MatrixBlock *current_block = get_MatrixBlock(i, j, map);
+            if (current_block->max_cell.max_score > max_val)
+            {
+                max_val = current_block->max_cell.max_score;
+                block = current_block;
+            }
+        }
+    }
+    return block;
+}
+
+void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2)
+{
+    msg->block = *block;
+    memcpy(msg->seq1, seq1->data + block->i * BLOCK_WIDTH, block->width * sizeof(char));
+    memcpy(msg->seq2, seq2->data + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
+}
+
+void send_BlockParam(BlockParam *msg, int dest, int tag)
+{
+    MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, tag, MPI_COMM_WORLD);
+}
+
+void receive_BlockResult(BlockResult *msg, int *cnxt_pid, MPI_Status *status)
+{
+    MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, *cnxt_pid, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
+}
+
+void receive_TracebackResult(TracebackResult *msg, int *cnxt_pid, MPI_Status *status)
+{
+    MPI_Recv(msg, sizeof(TracebackResult), MPI_BYTE, *cnxt_pid, TAG_TRACEBACK_RESULT, MPI_COMM_WORLD, status);
+}
+
+void send_TracebackResult(TracebackResult *msg, int tag)
+{
+    MPI_Send(msg, sizeof(TracebackResult), MPI_BYTE, MASTER_RANK, tag, MPI_COMM_WORLD);
+}
+
+void send_BlockResult(BlockResult *msg)
+{
+    MPI_Send(msg, sizeof(BlockResult), MPI_BYTE, MASTER_RANK, TAG_BLOCK_RESULT, MPI_COMM_WORLD);
+}
+
+void receive_BlockParam(BlockParam *msg, MPI_Status *status)
+{
+    MPI_Recv(msg,
+             sizeof(BlockParam),
+             MPI_BYTE,
+             MASTER_RANK,
+             MPI_ANY_TAG,
+             MPI_COMM_WORLD,
+             status);
 }
