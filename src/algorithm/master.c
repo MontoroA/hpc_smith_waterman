@@ -1,5 +1,6 @@
 #include <mpi.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "algorithm/master.h"
 #include "algorithm/blocks.h"
@@ -49,6 +50,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         if(block_is_ready(diag, map)){
             load_dependencies(diag,map);
             enqueue(queue, *diag);
+            printf("(master process) enqueued block (%d, %d) \n", diag->i, diag->j);
         }
     }
     
@@ -58,6 +60,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         if(block_is_ready(der, map)){
             load_dependencies(der,map);
             enqueue(queue, *der);
+            printf("(master process) enqueued block (%d, %d) \n", der->i, der->j);
         }
     }
     
@@ -67,6 +70,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         if(block_is_ready(inf, map)){
             load_dependencies(inf,map);
             enqueue(queue, *inf);
+            printf("(master process) enqueued block (%d, %d) \n", inf->i, inf->j);
         }
     }
 }
@@ -76,15 +80,15 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 
 void master(CharArray *seq1, CharArray *seq2)
 {
-
+    printf("(master process) initialized \n");
     // preparar sus estructuras de control, mapa de bloques, etc
     BlockMap *map = create_Map(seq1, seq2);
     Queue *queue = createQueue(max(seq1->length, seq2->length));
-
+    
     int nro_procs;
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
-    bool *proc_available = malloc((nro_procs + 1) * sizeof(bool));
-    for (int i = 1; i <= nro_procs; i++)
+    bool *proc_available = malloc(nro_procs * sizeof(bool));
+    for (int i = 1; i < nro_procs; i++)
     {
         proc_available[i] = true;
     }
@@ -96,8 +100,18 @@ void master(CharArray *seq1, CharArray *seq2)
     int cnxt_pid = 1;
 
     MatrixBlock *block = get_Block(map, 0, 0);
+    //row and col of 0s
+    for(int i = 0; i < BLOCK_WIDTH; i++){
+        block->row[i] = 0;
+    }
+    for(int i = 0; i < BLOCK_HEIGHT; i++){
+        block->col[i] = 0;
+    }
 
     load_BlockParam(param_msg, block, seq1, seq2);
+
+    printf("(master process) ready for distributing work \n");
+
 
     // int count = 0;
     // MPI_Request request;
@@ -110,6 +124,7 @@ void master(CharArray *seq1, CharArray *seq2)
     while (true)
     {
         receive_BlockResult(result_msg, &cnxt_pid, &status);
+        printf("(master process) received result for block (%d, %d) from process %d \n", result_msg->block.i, result_msg->block.j, cnxt_pid);
         if (status.MPI_TAG == TAG_BLOCK_RESULT)
         {
             // actualizo el bloque en el mapa
@@ -121,13 +136,14 @@ void master(CharArray *seq1, CharArray *seq2)
             proc_available[cnxt_pid] = true;
             working_procs--;
 
-            for (int i = 1; i <= nro_procs; i++)
+            for (int i = 1; i < nro_procs; i++)
             {
                 if (proc_available[i])
                 {
                     if (isEmpty(queue))
                         break;
                     block = dequeue(queue);
+                    printf("(master process) popped block (%d, %d): sent to process %d \n", block->i, block->j, i);
                     load_BlockParam(param_msg, block, seq1, seq2);
                     send_BlockParam(param_msg, i);
                     proc_available[i] = false;
@@ -146,7 +162,7 @@ void master(CharArray *seq1, CharArray *seq2)
     // print_block_map(map, seq1, seq2);
 
     // terminar slaves para que liberen su memoria y terminen
-    for (int i = 0; i < nro_procs; i++)
+    for (int i = 1; i < nro_procs; i++)
     {
         // TODO: el master_rank es 0, hay que ver que ningun salve tenga el mismo indicador
         MPI_Send(NULL,

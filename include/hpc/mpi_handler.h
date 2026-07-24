@@ -1,8 +1,8 @@
 #ifndef MPI_HANDLER_H
 #define MPI_HANDLER_H
 
-#define BLOCK_HEIGHT 10000
-#define BLOCK_WIDTH 10000
+#define BLOCK_HEIGHT 10
+#define BLOCK_WIDTH 10
 
 #define TAG_BLOCK_PARAM 0
 #define TAG_BLOCK_RESULT 1

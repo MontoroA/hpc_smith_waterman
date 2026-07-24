@@ -8,6 +8,6 @@ BlockResult *complete_block(int *matrix, MatrixCell *max_cell, CharArray *seq1, 
 
 void traceback(int *matrix, MatrixCell *entry, CharArray *sequence1, CharArray *sequence2);
 
-int max_val(int *matrix, int i, int j, char *seq1, char *seq2);
+// int max_val(int *matrix, int i, int j, char *seq1, char *seq2);
 
 #endif

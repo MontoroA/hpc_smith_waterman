@@ -14,9 +14,9 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
     int length = height * width;
 
     MatrixBlock *map = malloc(length * sizeof(MatrixBlock));
-    for (int i_idx = 0; i_idx <= height; i_idx++)
+    for (int i_idx = 0; i_idx < height; i_idx++)
     {
-        for (int j_idx = 0; j_idx <= width; j_idx++)
+        for (int j_idx = 0; j_idx < width; j_idx++)
         {
             MatrixBlock* blk = &map[i_idx * width + j_idx];
             blk->i = i_idx;
@@ -178,7 +178,7 @@ void load_block(int *matrix, BlockParam *block_param)
 /*NO OLVIDAR QUE PARA LOS CALCULOS DE ABAJO SE TIENE EN CUENTA QUE LA MATRIX TIENE UNA FILA Y UNA COLUMNA EXTRA*/
 void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2)
 {
-    memcpy(result_msg, matrix + len2 * BLOCK_WIDTH + 1, len1 * sizeof(int));
+    memcpy(result_msg->block.row, matrix + len2 * BLOCK_WIDTH + 1, len1 * sizeof(int));
     return;
 }
 

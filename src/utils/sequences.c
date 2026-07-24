@@ -43,9 +43,8 @@ CharArray* load_sequence_in_folders(const char* filename){
     fseek(filePointer, 0, SEEK_SET);
 
     CharArray* seq = malloc(sizeof(CharArray));
-    seq->data = malloc(length + 2);
-    char* temp = seq->data + 1;
-    int read = fread(temp, 1, length, filePointer);
+    seq->data = malloc(length + 1);
+    int read = fread(seq->data, 1, length, filePointer);
     if(read != length){
         printf("Error reading file: expected %ld bytes, read %d bytes\n", length, read);
         free(seq->data);
@@ -53,14 +52,14 @@ CharArray* load_sequence_in_folders(const char* filename){
         fclose(filePointer);
         return NULL;
     }
-    temp[length] = '\0';
+    seq->data[length] = '\0';
     seq->length = length;
 
     fclose(filePointer);
     return seq;
 }
 
-
+// ojo: tienen largo 1 de mas
 CharArray* generate_sequence(int exp) {
     srand(time(NULL));
     char bases[] = {'A', 'C', 'G', 'T'};

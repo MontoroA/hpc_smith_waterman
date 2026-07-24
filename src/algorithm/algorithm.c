@@ -41,17 +41,29 @@ Direction reverse_max_val(int *matrix, int i, int j, char *seq1, char *seq2, int
         return LEFT;
 }
 
-void print_matrix(int *matrix, int rows, int cols)
+void print_matrix(int *matrix, CharArray *sequence1, CharArray *sequence2)
 {
+    int rows = sequence2->length + 1;
+    int cols = sequence1->length + 1;
+    int row_size = BLOCK_WIDTH + 1;
+
+    printf("   ");
+    for(int j = 0; j < cols; j++){
+        if(j == 0) printf("   ");
+        else printf(" %c ", sequence1->data[j-1]);
+    }
+    printf("\n");
     for (int i = 0; i < rows; i++)
     {
+        if(i == 0) printf("   ");
+        else printf(" %c ", sequence2->data[i-1]);
         for (int j = 0; j < cols; j++)
         {
-            int val = matrix[i * cols + j];
+            int val = matrix[i * row_size + j];
             if (0 <= val && val < 10)
                 printf(" %d ", val);
             else
-                printf("%d ", matrix[i * cols + j]);
+                printf("%d ", matrix[i * row_size + j]);
         }
         printf("\n");
     }
@@ -107,8 +119,8 @@ void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, Cha
     max_cell->i = max_i;
     max_cell->j = max_j;
     max_cell->max_score = max_score;
-
-    // print_matrix(matrix, len1 + 1, len2 + 1);
+    
+    // print_matrix(matrix, sequence1, sequence2);
 }
 
 void traceback(int *matrix, MatrixCell *entry, CharArray *sequence1, CharArray *sequence2)

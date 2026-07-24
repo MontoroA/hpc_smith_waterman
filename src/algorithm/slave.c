@@ -8,6 +8,9 @@
 
 void slave()
 {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    printf("(process %d) initialized \n", rank);
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
     int *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
@@ -17,9 +20,10 @@ void slave()
 
     CharArray *seq1 = malloc(sizeof(CharArray));
     CharArray *seq2 = malloc(sizeof(CharArray));
-
+    printf("(process %d) ready to work \n", rank);
     while (true)
     {
+        printf("(process %d) waiting for data \n", rank);
         MPI_Recv(param_msg,
                  sizeof(BlockParam),
                  MPI_BYTE,
@@ -27,29 +31,28 @@ void slave()
                  MPI_ANY_TAG,
                  MPI_COMM_WORLD,
                  &status);
-
+        
         if (status.MPI_TAG == TAG_TERMINATE)
         {
+            printf("(process %d) received terminate signal \n", rank);
             break;
         }
 
         if (status.MPI_TAG == TAG_BLOCK_PARAM)
         {
+            printf("(process %d) receives block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
             load_block(matrix, param_msg);
 
             seq1->data = param_msg->seq1;
             seq1->length = param_msg->block.width;
             seq2->data = param_msg->seq2;
             seq2->length = param_msg->block.height;
-
-            //obtengo mi rank
-            int rank;
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-            printf("Worker %d procesa el bloque (%d, %d) ", rank, param_msg->block.i, param_msg->block.j);
+            
+            printf("(process %d) working on block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
             complete_block(matrix, max_cell, seq1, seq2);
 
             load_blockResult(result_msg, matrix, max_cell, param_msg);
-
+            printf("(process %d) sending result for block (%d, %d) with max score %d \n", rank, result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
             MPI_Send(result_msg,
                      sizeof(BlockResult),
                      MPI_BYTE,
