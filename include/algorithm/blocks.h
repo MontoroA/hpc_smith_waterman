@@ -1,7 +1,7 @@
 #ifndef BLOCKS_H
 #define BLOCKS_H
 
-#include <stdlib.h> 
+#include <stdlib.h>
 
 #include "hpc/mpi_handler.h"
 #include "algorithm/primitives/primitives.h"
@@ -38,8 +38,8 @@ typedef struct
 typedef struct
 {
     MatrixBlock block;
-    char seq1[BLOCK_HEIGHT];
-    char seq2[BLOCK_WIDTH];
+    char seq1[BLOCK_WIDTH];
+    char seq2[BLOCK_HEIGHT];
 } BlockParam;
 
 typedef struct
@@ -47,6 +47,18 @@ typedef struct
     MatrixBlock block;
     MatrixCell result;
 } BlockResult;
+
+typedef struct
+{
+    int block_i;
+    int block_j;
+    int width;
+    int height;
+    MatrixCell next_starting_cell;
+    Direction next_block;
+    char matched_seq1[BLOCK_WIDTH];
+    char matched_seq2[BLOCK_HEIGHT];
+} TracebackResult;
 
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2);
 
@@ -59,6 +71,12 @@ void update_BlockMap(MatrixBlock block, BlockMap *map);
 MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
 
 BlockParam *create_blockParam();
+
+TracebackResult *create_tracebackResult();
+
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2)
+
+    void free_TracebackResult(TracebackResult *msg);
 
 // BlockParam *load_blockParam(MatrixBlock *block, int *upper_row, int *left_col);
 
@@ -95,6 +113,5 @@ void free_BlockResult(BlockResult *msg);
 // void extract_bottom_row(BlockInfo* block_dscr);
 
 // void extract_right_column(BlockInfo* block_dscr);
-
 
 #endif

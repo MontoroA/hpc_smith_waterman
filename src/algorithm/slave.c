@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <mpi.h>
-
+#include <stdlib.h>
+#include <string.h>
 #include "algorithm/slave.h"
 #include "algorithm/algorithm.h"
 #include "hpc/mpi_handler.h"
@@ -20,6 +21,14 @@ void slave()
 
     CharArray *seq1 = malloc(sizeof(CharArray));
     CharArray *seq2 = malloc(sizeof(CharArray));
+
+    // traceback
+    char *matched_seq1 = malloc(BLOCK_WIDTH * sizeof(char));
+    char *matched_seq2 = malloc(BLOCK_HEIGHT * sizeof(char));
+    Direction next_block = 0;
+    TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
+    MatrixCell *starting_cell = malloc(sizeof(MatrixCell));
+
     printf("(process %d) ready to work \n", rank);
     while (true)
     {
@@ -31,7 +40,7 @@ void slave()
                  MPI_ANY_TAG,
                  MPI_COMM_WORLD,
                  &status);
-        
+
         if (status.MPI_TAG == TAG_TERMINATE)
         {
             printf("(process %d) received terminate signal \n", rank);
@@ -47,7 +56,7 @@ void slave()
             seq1->length = param_msg->block.width;
             seq2->data = param_msg->seq2;
             seq2->length = param_msg->block.height;
-            
+
             printf("(process %d) working on block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
             complete_block(matrix, max_cell, seq1, seq2);
 
@@ -60,11 +69,56 @@ void slave()
                      TAG_BLOCK_RESULT,
                      MPI_COMM_WORLD);
         }
+
+        if (status.MPI_TAG == TAG_TRACEBACK_RUN || status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR)
+        {
+            printf("(process %d) receives block (%d, %d) for traceback\n", rank, param_msg->block.i, param_msg->block.j);
+            load_block(matrix, param_msg);
+
+            seq1->data = param_msg->seq1;
+            seq1->length = param_msg->block.width;
+            seq2->data = param_msg->seq2;
+            seq2->length = param_msg->block.height;
+
+            printf("(process %d) working on traceback for block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
+            complete_block(matrix, max_cell, seq1, seq2);
+
+            traceback_msg->block_i = param_msg->block.i;
+            traceback_msg->block_j = param_msg->block.j;
+
+            if (status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR)
+            {
+                printf("(process %d) sending traceback neighbour ready for block (%d, %d)\n", rank, traceback_msg->block_i, traceback_msg->block_j);
+                MPI_Send(traceback_msg,
+                         sizeof(TracebackResult),
+                         MPI_BYTE,
+                         MASTER_RANK,
+                         TAG_TRACEBACK_NEIGHBOUR_READY,
+                         MPI_COMM_WORLD);
+            }
+            else
+            {
+                next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, seq1->data, seq2->data);
+
+                load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
+
+                printf("(process %d) sending traceback result for block (%d, %d) \n", rank, traceback_msg->block_i, traceback_msg->block_j);
+                MPI_Send(traceback_msg,
+                         sizeof(TracebackResult),
+                         MPI_BYTE,
+                         MASTER_RANK,
+                         TAG_TRACEBACK_RESULT,
+                         MPI_COMM_WORLD);
+            }
+        }
     }
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
+    free_TracebackResult(traceback_msg);
     free_block(matrix);
     free(max_cell);
     free(seq1);
     free(seq2);
+    free(matched_seq1);
+    free(matched_seq2);
 }

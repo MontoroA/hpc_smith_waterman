@@ -18,7 +18,7 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
     {
         for (int j_idx = 0; j_idx < width; j_idx++)
         {
-            MatrixBlock* blk = &map[i_idx * width + j_idx];
+            MatrixBlock *blk = &map[i_idx * width + j_idx];
             blk->i = i_idx;
             blk->j = j_idx;
             blk->is_unlocked = false;
@@ -67,24 +67,18 @@ void print_blockMap(BlockMap *map)
     printf("\n");
 }
 
-MatrixBlock *get_BlockMap(int i, int j, BlockMap *map)
-{
-    return &map->blocks[i * map->width + j];
-}
-
 void update_BlockMap(MatrixBlock block, BlockMap *map)
 {
     int i = block.i;
     int j = block.j;
 
-    MatrixBlock *updated_block = get_BlockMap(i, j, map);
+    MatrixBlock *updated_block = get_MatrixBlock(i, j, map);
     updated_block->is_unlocked = true; // marcar bloque como procesado
 
     memcpy(updated_block->row, block.row, BLOCK_WIDTH * sizeof(int));
     memcpy(updated_block->col, block.col, BLOCK_HEIGHT * sizeof(int));
     updated_block->diag = block.diag;
 }
-
 
 bool block_is_ready(MatrixBlock *block, BlockMap *map)
 {
@@ -135,8 +129,9 @@ void load_dependencies(MatrixBlock *block, BlockMap *map)
     {
         MatrixBlock *diag = get_MatrixBlock(i - 1, j - 1, map);
         block->diag = diag->diag;
-    }else{
-
+    }
+    else
+    {
     }
     if (i > 0)
     {
@@ -238,6 +233,30 @@ void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell
 }
 
 void free_BlockResult(BlockResult *msg)
+{
+    free(msg);
+}
+
+TracebackResult *create_tracebackResult()
+{
+    TracebackResult *msg = malloc(sizeof(TracebackResult));
+    return msg;
+}
+
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2)
+{
+    traceback_msg->block_i = param_msg->block.i;
+    traceback_msg->block_j = param_msg->block.j;
+    traceback_msg->width = param_msg->block.width;
+    traceback_msg->height = param_msg->block.height;
+    traceback_msg->next_starting_cell = *starting_cell;
+    traceback_msg->next_block = next_block;
+
+    memcpy(traceback_msg->matched_seq1, matched_seq1, traceback_msg->width * sizeof(char));
+    memcpy(traceback_msg->matched_seq2, matched_seq2, traceback_msg->height * sizeof(char));
+}
+
+void free_TracebackResult(TracebackResult *msg)
 {
     free(msg);
 }

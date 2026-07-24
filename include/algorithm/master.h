@@ -6,8 +6,6 @@
 
 void master(CharArray *seq1, CharArray *seq2);
 
-MatrixBlock *get_Block(BlockMap *map, int i, int j);
-
 // void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2);
 
 // void send_BlockParam(BlockParam *msg, int dest);
