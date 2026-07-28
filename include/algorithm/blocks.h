@@ -1,8 +1,8 @@
 #ifndef BLOCKS_H
 #define BLOCKS_H
 
-#include <stdlib.h> 
-
+#include <stdlib.h>
+#include <mpi.h>
 #include "hpc/mpi_handler.h"
 #include "algorithm/primitives/primitives.h"
 
@@ -26,6 +26,7 @@ typedef struct
     int row[BLOCK_WIDTH];
     int col[BLOCK_HEIGHT];
     int diag;
+    MatrixCell max_cell;
 } MatrixBlock;
 
 typedef struct
@@ -38,8 +39,8 @@ typedef struct
 typedef struct
 {
     MatrixBlock block;
-    char seq1[BLOCK_HEIGHT];
-    char seq2[BLOCK_WIDTH];
+    char seq1[BLOCK_WIDTH];
+    char seq2[BLOCK_HEIGHT];
 } BlockParam;
 
 typedef struct
@@ -47,6 +48,18 @@ typedef struct
     MatrixBlock block;
     MatrixCell result;
 } BlockResult;
+
+typedef struct
+{
+    int block_i;
+    int block_j;
+    int width;
+    int height;
+    MatrixCell next_starting_cell;
+    Direction next_block;
+    char matched_seq1[BLOCK_WIDTH];
+    char matched_seq2[BLOCK_HEIGHT];
+} TracebackResult;
 
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2);
 
@@ -60,7 +73,11 @@ void update_BlockMap(MatrixBlock block, BlockMap *map);
 
 BlockParam *create_blockParam();
 
-// BlockParam *load_blockParam(MatrixBlock *block, int *upper_row, int *left_col);
+TracebackResult *create_tracebackResult();
+
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2);
+
+void free_TracebackResult(TracebackResult *msg);
 
 bool block_is_ready(MatrixBlock *block, BlockMap *map);
 
@@ -82,8 +99,6 @@ void load_block(int *matrix, MatrixBlock *block);
 
 // void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2);
 
-// BlockStartMessage *create_block_start_message();
-
 void free_BlockParam(BlockParam *param);
 
 BlockResult *create_blockResult();
@@ -92,10 +107,22 @@ void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell
 
 void free_BlockResult(BlockResult *msg);
 
-// void extract_bottom_row(BlockInfo* block_dscr);
+MatrixBlock *get_TracebackStartingBlock(BlockMap *map);
 
-// void extract_right_column(BlockInfo* block_dscr);
+void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2);
 
 void print_info(MatrixBlock *block);
+
+void send_BlockParam(BlockParam *msg, int dest, int tag);
+
+void receive_BlockResult(BlockResult *msg, MPI_Status *status);
+
+void receive_TracebackResult(TracebackResult *msg, int *cnxt_pid, MPI_Status *status);
+
+void send_TracebackResult(TracebackResult *msg, int tag);
+
+void send_BlockResult(BlockResult *msg);
+
+void receive_BlockParam(BlockParam *msg, MPI_Status *status);
 
 #endif

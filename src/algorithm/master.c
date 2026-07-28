@@ -9,36 +9,34 @@
 #include "algorithm/primitives/queue.h"
 #include "utils/reports.h"
 
-
-
-MatrixBlock *get_Block(BlockMap *map, int i, int j)
+typedef enum
 {
-    return &map->blocks[i * map->width + j];
-}
+    NEIGHBOUR_READY = 0,
+    WORKING = 1,
+    FINISHED = 2,
+    NEIGHBOUR_DELAYED = 3
+} State;
 
-
-void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2)
+typedef struct
 {
-    msg->block = *block;
-    char* start_seq1 = seq1->data + block->i * BLOCK_WIDTH;
-    char* start_seq2 = seq2->data + block->j * BLOCK_HEIGHT;
-    memcpy(msg->seq1, start_seq1, block->width);
-    memcpy(msg->seq2, start_seq2, block->height);
-}
+    int block_i;
+    int block_j;
+    int proc_id;
+    State state;
+} TracebackWorker;
 
 
-int send_BlockParam(BlockParam *msg, int dest)
-{
-    MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, TAG_BLOCK_PARAM, MPI_COMM_WORLD);
-    return 0; //TODO por que un int?
-}
+// int send_BlockParam(BlockParam *msg, int dest)
+// {
+//     MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, TAG_BLOCK_PARAM, MPI_COMM_WORLD);
+//     return 0; //TODO por que un int?
+// }
 
 
-void receive_BlockResult(BlockResult *msg, MPI_Status *status)
-{
-    MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, MPI_ANY_SOURCE, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
-}
-
+// void receive_BlockResult(BlockResult *msg, MPI_Status *status)
+// {
+//     MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, MPI_ANY_SOURCE, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
+// }
 
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 {
@@ -50,13 +48,14 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
     if (i < (height - 1) && j < (width - 1))
     {
         MatrixBlock *diag = get_MatrixBlock(i + 1, j + 1, map);
-        if(block_is_ready(diag, map)){
-            load_dependencies(diag,map);
+        if (block_is_ready(diag, map))
+        {
+            load_dependencies(diag, map);
             enqueue(queue, *diag);
             print(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
         }
     }
-    
+
     if (j < (width - 1))
     {
         MatrixBlock *der = get_MatrixBlock(i, j + 1, map);
@@ -66,7 +65,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
             print(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
         }
     }
-    
+
     if (i < (height - 1))
     {
         MatrixBlock *inf = get_MatrixBlock(i + 1, j, map);
@@ -78,15 +77,128 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
     }
 }
 
+void enqueue_ready_blocks_traceback(Queue *queue, BlockMap *map, MatrixBlock *block)
+{
+    int i = block->i;
+    int j = block->j;
 
+    if ((i - 1 >= 0) && (j - 1 >= 0))
+    {
+        MatrixBlock *diag = get_MatrixBlock(i - 1, j - 1, map);
+        if (block_is_ready(diag, map))
+        {
+            load_dependencies(diag, map);
+            enqueue(queue, *diag);
+            printf("(master process) enqueued block (%d, %d) \n", diag->i, diag->j);
+        }
+    }
 
+    if ((j - 1) >= 0)
+    {
+        MatrixBlock *der = get_MatrixBlock(i, j - 1, map);
+        if (block_is_ready(der, map))
+        {
+            load_dependencies(der, map);
+            enqueue(queue, *der);
+            printf("(master process) enqueued block (%d, %d) \n", der->i, der->j);
+        }
+    }
+
+    if ((i - 1) >= 0)
+    {
+        MatrixBlock *inf = get_MatrixBlock(i - 1, j, map);
+        if (block_is_ready(inf, map))
+        {
+            load_dependencies(inf, map);
+            enqueue(queue, *inf);
+            printf("(master process) enqueued block (%d, %d) \n", inf->i, inf->j);
+        }
+    }
+}
+
+void update_TracebackWorkers(TracebackWorker *traceback_workers, int block_i, int block_j, int proc_id, State state)
+{
+    traceback_workers[proc_id - 1].block_i = block_i;
+    traceback_workers[proc_id - 1].block_j = block_j;
+    traceback_workers[proc_id - 1].proc_id = proc_id;
+    traceback_workers[proc_id - 1].state = state;
+}
+
+int get_TracebackWorker(TracebackWorker *traceback_workers, int block_i, int block_j)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (traceback_workers[i].block_i == block_i && traceback_workers[i].block_j == block_j)
+        {
+            return traceback_workers[i].proc_id;
+        }
+    }
+    return -1; // no se encontro el bloque
+}
+
+void update_Traceback(TracebackResult *traceback_msg, List *matched_seq1, List *matched_seq2)
+{
+    for (int j = traceback_msg->width - 1; j == 0; j--)
+    {
+        push(&matched_seq1, traceback_msg->matched_seq1[j]);
+    }
+
+    for (int i = traceback_msg->height - 1; i == 0; i--)
+    {
+        push(&matched_seq2, traceback_msg->matched_seq2[i]);
+    }
+}
+
+MatrixBlock *get_NextBlockTraceback(BlockMap *map, TracebackResult *traceback_msg)
+{
+    int i = traceback_msg->block_i;
+    int j = traceback_msg->block_j;
+
+    if (traceback_msg->next_block == DIAG && (i - 1 >= 0) && (j - 1 >= 0))
+    {
+        return get_MatrixBlock(i - 1, j - 1, map);
+    }
+    else if (traceback_msg->next_block == UP && (i - 1 >= 0))
+    {
+        return get_MatrixBlock(i - 1, j, map);
+    }
+    else if (traceback_msg->next_block == LEFT && (j - 1 >= 0))
+    {
+        return get_MatrixBlock(i, j - 1, map);
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
+{
+    if (traceback_msg->next_block == DIAG)
+    {
+        block->max_cell.i = traceback_msg->next_starting_cell.i + block->height - 1;
+        block->max_cell.j = traceback_msg->next_starting_cell.j + block->width - 1;
+    }
+    else if (traceback_msg->next_block == UP)
+    {
+        block->max_cell.i = traceback_msg->next_starting_cell.i + block->height - 1;
+        block->max_cell.j = traceback_msg->next_starting_cell.j;
+    }
+    else if (traceback_msg->next_block == LEFT)
+    {
+        block->max_cell.i = traceback_msg->next_starting_cell.i;
+        block->max_cell.j = traceback_msg->next_starting_cell.j + block->width - 1;
+    }
+
+    block->max_cell.max_score = traceback_msg->next_starting_cell.max_score;
+}
 
 void master(CharArray *seq1, CharArray *seq2)
 {
     print(MASTER_RANK, "initialized\n");
     BlockMap *map = create_Map(seq1, seq2);
     Queue *queue = createQueue(max(seq1->length, seq2->length));
-    
+
     int nro_procs;
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
     bool *proc_available = malloc(nro_procs * sizeof(bool));
@@ -97,7 +209,7 @@ void master(CharArray *seq1, CharArray *seq2)
 
     BlockResult *result_msg = create_blockResult();
     BlockParam *param_msg = create_blockParam();
-    MatrixBlock *block = get_Block(map, 0, 0);
+    MatrixBlock *block = get_MatrixBlock(0, 0, map);
     //row and col of 0s
     // for(int i = 0; i < BLOCK_WIDTH; i++){
     //     block->row[i] = 0;
@@ -116,7 +228,8 @@ void master(CharArray *seq1, CharArray *seq2)
     // MPI_Request request;
     int cnxt_pid = 1;
     MPI_Status status;
-    send_BlockParam(param_msg, cnxt_pid);
+
+    send_BlockParam(param_msg, cnxt_pid, TAG_BLOCK_PARAM);
 
     int working_procs = 1;
 
@@ -142,7 +255,7 @@ void master(CharArray *seq1, CharArray *seq2)
                     block = dequeue(queue);
                     print(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
                     load_BlockParam(param_msg, block, seq1, seq2);
-                    send_BlockParam(param_msg, i);
+                    send_BlockParam(param_msg, i, TAG_BLOCK_PARAM);
                     proc_available[i] = false;
                     working_procs++;
                 }
@@ -155,12 +268,146 @@ void master(CharArray *seq1, CharArray *seq2)
         }
     }
 
-    // traceback(matrix, res, seq1, seq2);
+    // arranco con el traceback
+    List *matched_seq1 = NULL;
+    List *matched_seq2 = NULL;
+
+    TracebackResult *traceback_msg = create_tracebackResult();
+
+    // arreglo donde guardo el estado actual de los 4 workers
+    TracebackWorker traceback_workers[4];
+
+    // bloque donde empieza el traceback, que es el que tiene el max score
+    block = get_TracebackStartingBlock(map);
+
+    // en este caso el starting_cell es el max_cell guardado en el bloque
+    load_BlockParam(param_msg, block, seq1, seq2);
+
+    // mando el bloque a trabajar con el traceback
+    send_BlockParam(param_msg, 1, TAG_TRACEBACK_FIRST_RUN);
+
+    // actualizo el estado del worker
+    update_TracebackWorkers(traceback_workers, block->i, block->j, 1, WORKING);
+
+    working_procs = 1;
+
+    // encolo los otros 3 bloques
+    enqueue_ready_blocks_traceback(queue, map, block);
+
+    for (int i = 2; i < 5; i++)
+    {
+        block = dequeue(queue);
+        printf("(master process) popped block (%d, %d): sent to process %d \n", block->i, block->j, i);
+        load_BlockParam(param_msg, block, seq1, seq2);
+
+        // mando el bloque vecino para que este listo por adelantado
+        send_BlockParam(param_msg, i, TAG_TRACEBACK_NEIGHBOUR);
+        update_TracebackWorkers(traceback_workers, block->i, block->j, i, WORKING);
+        working_procs++;
+    }
+
+    while (true)
+    {
+        receive_TracebackResult(traceback_msg, &cnxt_pid, &status);
+        if (status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR_READY)
+        {
+            // actualizo el estado del worker que se comunico
+            printf("(master process) received traceback neighbour ready for block (%d, %d) from process %d \n", traceback_msg->block_i, traceback_msg->block_j, cnxt_pid);
+            update_TracebackWorkers(traceback_workers, traceback_msg->block_i, traceback_msg->block_j, cnxt_pid, NEIGHBOUR_READY);
+            working_procs--;
+            // cuando se agregaron nuevamente bloques a la cola a lo mejor un worker no habia terminado con el anterior
+            // o sea va una iteracion atrasado y debe ponerse al dia y ejecutar el bloque que ahora le corresponde
+            if (!isEmpty(queue) && traceback_workers[cnxt_pid - 1].state == NEIGHBOUR_DELAYED)
+            {
+                block = dequeue(queue);
+                printf("(master process) popped block (%d, %d): sent to process %d \n", block->i, block->j, cnxt_pid);
+                load_BlockParam(param_msg, block, seq1, seq2);
+                send_BlockParam(param_msg, cnxt_pid, TAG_TRACEBACK_NEIGHBOUR);
+                update_TracebackWorkers(traceback_workers, block->i, block->j, cnxt_pid, WORKING);
+                working_procs++;
+            }
+        }
+
+        if (status.MPI_TAG == TAG_TRACEBACK_RESULT)
+        {
+            // actualizo el estado del worker que se comunico
+            printf("(master process) received traceback block result (%d, %d) from process %d \n", traceback_msg->block_i, traceback_msg->block_j, cnxt_pid);
+            update_TracebackWorkers(traceback_workers, traceback_msg->block_i, traceback_msg->block_j, cnxt_pid, FINISHED);
+            working_procs--;
+
+            // actualizo las secuencias encontradas en el traceback
+            update_Traceback(traceback_msg, matched_seq1, matched_seq2);
+
+            // obtengo el siguiente bloque para el traceback
+            block = get_NextBlockTraceback(map, traceback_msg);
+
+            // si no hay siguiente bloque para el traceback es porque termino
+            if (block == NULL)
+            {
+                printf("(master process) traceback completed \n");
+                break;
+            }
+            // el traceback arranca en una celda que no es la guardada en el map
+            // cargo el starting_cell en el bloque para que el slave arranque desde ahi
+            load_NextStartingCell(traceback_msg, block);
+
+            // veo que worker estaba trabajando por adelanto el siguiente bloque del traceback
+            int proc_id = get_TracebackWorker(traceback_workers, block->i, block->j);
+
+            // espero a que el worker lo finalice si no lo ha hecho aun
+            while (traceback_workers[proc_id - 1].state != NEIGHBOUR_READY)
+            {
+                receive_TracebackResult(traceback_msg, &cnxt_pid, &status);
+                if (status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR_READY)
+                {
+                    update_TracebackWorkers(traceback_workers, traceback_msg->block_i, traceback_msg->block_j, cnxt_pid, NEIGHBOUR_READY);
+                    working_procs--;
+                }
+            }
+
+            // encolo los bloques vecinos para que se vayan recalculando en paralelo
+            enqueue_ready_blocks_traceback(queue, map, block);
+
+            // envio a que se empiece a correr el traceback sobre el bloque que ya va a estar calculado
+            printf("(master process) popped block (%d, %d): sent to process %d \n", block->i, block->j, proc_id);
+            load_BlockParam(param_msg, block, seq1, seq2);
+            send_BlockParam(param_msg, proc_id, TAG_TRACEBACK_RUN);
+            update_TracebackWorkers(traceback_workers, block->i, block->j, proc_id, WORKING);
+            working_procs++;
+
+            int i = 1;
+            while (i < 5)
+            {
+                // solo se manda a workers que no estan ejecutando (esten o no atrasados)
+                if (traceback_workers[i - 1].state != WORKING || traceback_workers[i - 1].state != NEIGHBOUR_DELAYED)
+                {
+                    if (isEmpty(queue))
+                        break;
+                    block = dequeue(queue);
+                    printf("(master process) popped block (%d, %d): sent to process %d \n", block->i, block->j, i);
+                    load_BlockParam(param_msg, block, seq1, seq2);
+                    send_BlockParam(param_msg, i, TAG_TRACEBACK_NEIGHBOUR);
+                    update_TracebackWorkers(traceback_workers, block->i, block->j, i, WORKING);
+                    working_procs++;
+                    i++;
+                }
+                // si el proceso esta trabajando y no es el que esta haciendo el traceback localmente -> es porque esta atrasado
+                if (traceback_workers[i - 1].state == WORKING && i != proc_id)
+                {
+                    traceback_workers[i - 1].state = NEIGHBOUR_DELAYED;
+                }
+            }
+
+            if (isEmpty(queue) && working_procs == 0)
+            {
+                break;
+            }
+        }
+    }
     // print_block_map(map, seq1, seq2);
  
     for (int i = 1; i < nro_procs; i++)
     {
-        // TODO: el master_rank es 0, hay que ver que ningun salve tenga el mismo indicador
         MPI_Send(NULL,
                  0,
                  MPI_BYTE,
@@ -172,4 +419,7 @@ void master(CharArray *seq1, CharArray *seq2)
     free(map);
     free(proc_available);
     free(queue);
+    free_BlockParam(param_msg);
+    free_BlockResult(result_msg);
+    free_TracebackResult(traceback_msg);
 }

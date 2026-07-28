@@ -27,15 +27,15 @@ int max_val(int *matrix, int i, int j, char *seq1, char *seq2)
     return max;
 }
 
-Direction reverse_max_val(int *matrix, int i, int j, char *seq1, char *seq2, int row_size)
+Direction reverse_max_val(int *matrix, int i, int j, char *seq1, char *seq2)
 {
-    int diag = matrix[(i - 1) * row_size + (j - 1)] + s(seq1[i], seq2[j]);
-    int sup = matrix[(i - 1) * row_size + j] + W(1);
-    // int izq =  matrix[ i    *  row_size     + (j-1) ] + W(1);
+    int diag = matrix[(i - 1) * BLOCK_WIDTH + (j - 1)] + s(seq1[j - 1], seq2[i - 1]);
+    int sup = matrix[(i - 1) * BLOCK_WIDTH + j] + W(1);
+    // int izq = matrix[i * BLOCK_WIDTH + (j - 1)] + W(1);
 
-    if (matrix[i * row_size + j] == diag)
+    if (matrix[i * BLOCK_WIDTH + j] == diag)
         return DIAG;
-    if (matrix[i * row_size + j] == sup)
+    if (matrix[i * BLOCK_WIDTH + j] == sup)
         return UP;
     else
         return LEFT;
@@ -96,54 +96,55 @@ void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, Cha
     max_cell->i = max_i;
     max_cell->j = max_j;
     max_cell->max_score = max_score;
-    
+
     // print_matrix(matrix, sequence1, sequence2);
 }
 
-void traceback(int *matrix, MatrixCell *entry, CharArray *sequence1, CharArray *sequence2)
+Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int *matrix, MatrixCell *starting_cell, char *seq1, char *seq2)
 {
-    char *seq1 = sequence1->data;
-    char *seq2 = sequence2->data;
-    int len2 = sequence2->length;
-    // print_matrix(matrix, len1 + 1, len2 + 1);
+    int i = starting_cell->i;
+    int j = starting_cell->j;
+    int current_score = starting_cell->max_score;
 
-    // Find max score and backtrack to find the longest common subsequence
-    List *matched_seq1 = NULL;
-    List *matched_seq2 = NULL;
-    int i = entry->i;
-    int j = entry->j;
-    int current_score = entry->max_score;
-    do
+    while (j > 0 && i > 0)
     {
-        Direction dir = reverse_max_val(matrix, i, j, seq1, seq2, len2 + 1);
-        char val_seq1 = seq1[i];
-        char val_seq2 = seq2[j];
-        char gap = '_';
+        Direction dir = reverse_max_val(matrix, i, j, seq1, seq2);
         if (dir == DIAG)
         {
-            push(&matched_seq1, val_seq1);
-            push(&matched_seq2, val_seq2);
+            matched_seq1[j - 1] = seq1[j - 1];
+            matched_seq2[i - 1] = seq2[i - 1];
             i--;
             j--;
         }
         else if (dir == UP)
         {
-            push(&matched_seq1, val_seq1);
-            push(&matched_seq2, gap);
+            matched_seq1[j] = '_';
+            matched_seq2[i - 1] = seq2[i - 1];
             i--;
         }
         else
         {
-            push(&matched_seq1, gap);
-            push(&matched_seq2, val_seq2);
+            matched_seq1[j - 1] = seq1[j - 1];
+            matched_seq2[i] = '_';
             j--;
         }
-        current_score = matrix[i * (len2 + 1) + j];
-    } while (current_score > 0);
-    print_list(matched_seq1);
-    print_list(matched_seq2);
+        current_score = matrix[i * BLOCK_WIDTH + j];
+    }
 
-    // Free memory
-    free(matched_seq1);
-    free(matched_seq2);
+    starting_cell->i = i;
+    starting_cell->j = j;
+    starting_cell->max_score = current_score;
+
+    if (i == 0 && j == 0)
+    {
+        return DIAG;
+    }
+    else if (i == 0)
+    {
+        return LEFT;
+    }
+    else
+    {
+        return UP;
+    }
 }

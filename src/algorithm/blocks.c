@@ -11,6 +11,11 @@ MatrixBlock *get_BlockMap(int i, int j, BlockMap *map)
     return &map->blocks[i * map->width + j];
 }
 
+MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map)
+{
+    return &map->blocks[i * map->width + j];
+}
+
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
 {
     // last row/column of blocks might have smaller size
@@ -76,7 +81,7 @@ void update_BlockMap(MatrixBlock block, BlockMap *map)
 {
     int i = block.i;
     int j = block.j;
-    MatrixBlock *updated_block = get_BlockMap(i, j, map);
+    MatrixBlock *updated_block = get_MatrixBlock(i, j, map);
 
     updated_block->is_unlocked = true;
     for(int idx = 0; idx < updated_block->width; idx++)
@@ -88,8 +93,8 @@ void update_BlockMap(MatrixBlock block, BlockMap *map)
         updated_block->col[idx] = block.col[idx];
     }
     updated_block->diag = block.diag;
+    updated_block->max_cell = block.max_cell;
 }
-
 
 bool block_is_ready(MatrixBlock *block, BlockMap *map)
 {
@@ -241,11 +246,6 @@ BlockParam *create_blockParam()
     return param;
 }
 
-MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map)
-{
-    return &map->blocks[i * map->width + j];
-}
-
 void free_BlockParam(BlockParam *param)
 {
     free(param);
@@ -295,4 +295,91 @@ void print_info(MatrixBlock *block)
         printf("%d ", block->col[i]);
     }
     printf("\nDiag: %d\n\n\n", block->diag);
+}
+
+TracebackResult *create_tracebackResult()
+{
+    TracebackResult *msg = malloc(sizeof(TracebackResult));
+    return msg;
+}
+
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2)
+{
+    traceback_msg->block_i = param_msg->block.i;
+    traceback_msg->block_j = param_msg->block.j;
+    traceback_msg->width = param_msg->block.width;
+    traceback_msg->height = param_msg->block.height;
+    traceback_msg->next_starting_cell = *starting_cell;
+    traceback_msg->next_block = next_block;
+
+    memcpy(traceback_msg->matched_seq1, matched_seq1, traceback_msg->width * sizeof(char));
+    memcpy(traceback_msg->matched_seq2, matched_seq2, traceback_msg->height * sizeof(char));
+}
+
+void free_TracebackResult(TracebackResult *msg)
+{
+    free(msg);
+}
+
+MatrixBlock *get_TracebackStartingBlock(BlockMap *map)
+{
+    int max_val = 0;
+    MatrixBlock *block = NULL;
+
+    for (int i = 0; i < map->height; i++)
+    {
+        for (int j = 0; j < map->width; j++)
+        {
+            MatrixBlock *current_block = get_MatrixBlock(i, j, map);
+            if (current_block->max_cell.max_score > max_val)
+            {
+                max_val = current_block->max_cell.max_score;
+                block = current_block;
+            }
+        }
+    }
+    return block;
+}
+
+void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2)
+{
+    msg->block = *block;
+    memcpy(msg->seq1, seq1->data + block->i * BLOCK_WIDTH, block->width * sizeof(char));
+    memcpy(msg->seq2, seq2->data + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
+}
+
+void send_BlockParam(BlockParam *msg, int dest, int tag)
+{
+    MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, tag, MPI_COMM_WORLD);
+}
+
+void receive_BlockResult(BlockResult *msg, MPI_Status *status)
+{
+    MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, MPI_ANY_SOURCE, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
+}
+
+void receive_TracebackResult(TracebackResult *msg, int *cnxt_pid, MPI_Status *status)
+{
+    MPI_Recv(msg, sizeof(TracebackResult), MPI_BYTE, *cnxt_pid, TAG_TRACEBACK_RESULT, MPI_COMM_WORLD, status);
+}
+
+void send_TracebackResult(TracebackResult *msg, int tag)
+{
+    MPI_Send(msg, sizeof(TracebackResult), MPI_BYTE, MASTER_RANK, tag, MPI_COMM_WORLD);
+}
+
+void send_BlockResult(BlockResult *msg)
+{
+    MPI_Send(msg, sizeof(BlockResult), MPI_BYTE, MASTER_RANK, TAG_BLOCK_RESULT, MPI_COMM_WORLD);
+}
+
+void receive_BlockParam(BlockParam *msg, MPI_Status *status)
+{
+    MPI_Recv(msg,
+             sizeof(BlockParam),
+             MPI_BYTE,
+             MASTER_RANK,
+             MPI_ANY_TAG,
+             MPI_COMM_WORLD,
+             status);
 }
