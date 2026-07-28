@@ -10,6 +10,7 @@
 
 #include "utils/io.h"
 #include "utils/sequences.h"
+#include "utils/reports.h"
 
 #define BUFFER_SIZE 8192
 
@@ -32,9 +33,9 @@ CharArray* load_sequence_in_folders(const char* filename){
     FILE *filePointer;
     filePointer = fopen(filename, "rb");
 
-    printf("Loading sequence from file: %s\n", filename);
+    print(0, "Loading sequence from file: %s\n", filename);
     if(filePointer == NULL){
-        printf("Could not open file\n");
+        print(0, "Could not open file\n");
         return NULL;
     }
 
@@ -46,7 +47,7 @@ CharArray* load_sequence_in_folders(const char* filename){
     seq->data = malloc(length + 1);
     int read = fread(seq->data, 1, length, filePointer);
     if(read != length){
-        printf("Error reading file: expected %ld bytes, read %d bytes\n", length, read);
+        print(0, "Error reading file: expected %ld bytes, read %d bytes\n", length, read);
         free(seq->data);
         free(seq);
         fclose(filePointer);
@@ -70,9 +71,9 @@ CharArray* generate_sequence(int exp) {
     }
     result[size] = '\0';
     for(unsigned int i = 0; i < size; i++) {
-        printf("%c", result[i]);
+        print(0, "%c", result[i]);
     }
-    printf("\n");
+    print(0, "\n");
     CharArray* seq = malloc(sizeof(CharArray));
     seq->data = result;
     seq->length = size;
@@ -113,7 +114,7 @@ int save_sequence(const char* folder, CharArray* seq) {
     snprintf(filename, sizeof(filename), "%s/%d", folder, file_count + 1);
     FILE *filePointer = fopen(filename, "wb");
     if(filePointer == NULL){
-        printf("Could not open file for writing: %s\n", filename);
+        print(0, "Could not open file for writing: %s\n", filename);
         return -1;
     }
     int written = fwrite(seq->data, 1, seq->length, filePointer);
@@ -128,7 +129,7 @@ int save_sequence(const char* folder, CharArray* seq) {
 void list_files(const char *path) {
     DIR *dir = opendir(path);
     if (dir == NULL) {
-        printf("Could not open directory: %s\n", path);
+        print(0, "Could not open directory: %s\n", path);
         return;
     }
     struct dirent *entry;
@@ -149,7 +150,7 @@ void list_files(const char *path) {
         if (S_ISDIR(mode)) {
             list_files(fullpath);
         } else if (S_ISREG(mode)) {
-            printf("%s\n", fullpath);
+            print(0, "%s\n", fullpath);
         }
     }
     closedir(dir);
@@ -173,7 +174,7 @@ int print_sequence(const char *filepath) {
         return 1;
     }
     fclose(file);
-    printf("\n");
+    print(0, "\n");
     return 0;
 }
 
@@ -222,7 +223,7 @@ CharArray** execute_mode(int mode, char** params){
             char* folder =  decide_folder_based_on_size(generated_seq->length);
             err = save_sequence(folder, generated_seq);
             if(err != 0){
-                printf("Error saving generated sequence\n");
+                print(0, "Error saving generated sequence\n");
             }
             break;
             
@@ -240,13 +241,13 @@ CharArray** execute_mode(int mode, char** params){
             char *print_path = params[0];
             err = print_sequence(print_path);
             if (err != 0) {
-                printf("Error printing sequence from %s\n", print_path);
+                print(0, "Error printing sequence from %s\n", print_path);
             }
             break;
 
         case MODE_DELETE_SEQUENCE:
             // char *delete_path = params[0];
-            printf("Delete sequence mode is not implemented yet.\n");
+            print(0, "Delete sequence mode is not implemented yet.\n");
             break;
     }
     return seqs;

@@ -47,64 +47,41 @@ void print_matrix(int *matrix, CharArray *sequence1, CharArray *sequence2)
     int cols = sequence1->length + 1;
     int row_size = BLOCK_WIDTH + 1;
 
-    printf("   ");
+    printf("       ");
     for(int j = 0; j < cols; j++){
-        if(j == 0) printf("   ");
-        else printf(" %c ", sequence1->data[j-1]);
+        if(j == 0) printf("       ");
+        else printf("%6c ", sequence1->data[j-1]);
     }
     printf("\n");
+
     for (int i = 0; i < rows; i++)
     {
-        if(i == 0) printf("   ");
-        else printf(" %c ", sequence2->data[i-1]);
+        if(i == 0) printf("       ");
+        else printf("%6c ", sequence2->data[i-1]);
+
         for (int j = 0; j < cols; j++)
         {
-            int val = matrix[i * row_size + j];
-            if (0 <= val && val < 10)
-                printf(" %d ", val);
-            else
-                printf("%d ", matrix[i * row_size + j]);
+            printf("%6d ", matrix[i * row_size + j]);
         }
         printf("\n");
     }
+    printf("\n\n");
 }
 
 void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, CharArray *sequence2)
 {
     char *seq1 = sequence1->data;
     char *seq2 = sequence2->data;
-    int len1 = sequence1->length;
-    int len2 = sequence2->length;
+    int nro_rows = sequence1->length;
+    int nro_cols = sequence2->length;
 
-    // VERSION 2: ANTIDIAGONAL INICIAL
-    // int tope_block_j = len2 + 1;
-    // int max_i = 0, max_j = 0, max_score = 0;
-    // int k;
-    // int tope = len1 + len2 - 1;
-    // for(k = 0 ; k <= tope ; k++){
-    //     int init_i = min(k, len1);
-    //     int stop_i = max(1, k - len2 + 2);
-    //     for(int i = init_i ; i >= stop_i ; i--){
-    //         int j = k-i;
-    //         matrix[i*tope_block_j + j] = max_val(matrix, i, j, seq1, seq2, tope_block_j);
-    //         if(matrix[i*tope_block_j + j] > max_score){
-    //             max_score = matrix[i*tope_block_j + j];
-    //             max_i = i;
-    //             max_j = j;
-    //         }
-    //     }
-    // }
-
-    // VERSION 3: SECUENCIAL
     int i;
     int j;
     int max_i = 0, max_j = 0, max_score = 0;
 
-    /* <!> seq1 es la de arriba y seq2 la de la derecha <!>*/
-
-    for (i = 0; i < len2; i++) // i itera en las filas
+    for (i = 0; i < nro_cols; i++) 
     {
-        for (j = 0; j < len1; j++) // j itera en las columnas
+        for (j = 0; j < nro_rows; j++) //
         {
             matrix[(i + 1) * (BLOCK_WIDTH + 1) + (j + 1)] = max_val(matrix, i, j, seq1, seq2);
             if (matrix[(i + 1) * (BLOCK_WIDTH + 1) + (j + 1)] > max_score)
@@ -163,8 +140,8 @@ void traceback(int *matrix, MatrixCell *entry, CharArray *sequence1, CharArray *
         }
         current_score = matrix[i * (len2 + 1) + j];
     } while (current_score > 0);
-    print(matched_seq1);
-    print(matched_seq2);
+    print_list(matched_seq1);
+    print_list(matched_seq2);
 
     // Free memory
     free(matched_seq1);

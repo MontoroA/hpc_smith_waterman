@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "utils/io.h"
+#include "utils/reports.h"
 
 int read_mode(int argc, char **argv)
 {
@@ -88,15 +89,15 @@ int read_mode(int argc, char **argv)
         break;
 
     default:
-        printf("Modo invalido: %d\n", mode);
-        printf("Modos validos:\n");
-        printf("1: Cargar secuencias por defecto. No recibe parametros.\n");
-        printf("2: Cargar secuencias desde archivos. Recibe dos parametros: <archivo1> <archivo2>\n");
-        printf("3: Cargar secuencias desde cadenas de caracteres. Recibe dos parametros: <seq1> <seq2>\n");
-        printf("4: Generar secuencia aleatoria. Recibe un parametro: <exponente>\n");
-        printf("5: Listar secuencias en un directorio. Recibe cero o un parametro: [<subdirectorio>]\n");
-        printf("6: Imprimir secuencia desde un archivo. Recibe un parametro: <path>\n");
-        printf("7: Eliminar secuencia desde un archivo. Recibe un parametro: <path>\n");
+        print(0, "Modo invalido: %d\n", mode);
+        print(0, "Modos validos:\n");
+        print(0, "1: Cargar secuencias por defecto. No recibe parametros.\n");
+        print(0, "2: Cargar secuencias desde archivos. Recibe dos parametros: <archivo1> <archivo2>\n");
+        print(0, "3: Cargar secuencias desde cadenas de caracteres. Recibe dos parametros: <seq1> <seq2>\n");
+        print(0, "4: Generar secuencia aleatoria. Recibe un parametro: <exponente>\n");
+        print(0, "5: Listar secuencias en un directorio. Recibe cero o un parametro: [<subdirectorio>]\n");
+        print(0, "6: Imprimir secuencia desde un archivo. Recibe un parametro: <path>\n");
+        print(0, "7: Eliminar secuencia desde un archivo. Recibe un parametro: <path>\n");
         return MODE_INVALID;
     }
 

@@ -5,6 +5,12 @@
 #include "algorithm/blocks.h"
 #include "algorithm/algorithm.h"
 
+
+MatrixBlock *get_BlockMap(int i, int j, BlockMap *map)
+{
+    return &map->blocks[i * map->width + j];
+}
+
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
 {
     // last row/column of blocks might have smaller size
@@ -13,12 +19,15 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
 
     int length = height * width;
 
-    MatrixBlock *map = malloc(length * sizeof(MatrixBlock));
+    BlockMap *block_map = malloc(sizeof(BlockMap));
+    block_map->width = width;
+    block_map->height = height;
+    block_map->blocks = malloc(length * sizeof(MatrixBlock));
     for (int i_idx = 0; i_idx < height; i_idx++)
     {
         for (int j_idx = 0; j_idx < width; j_idx++)
         {
-            MatrixBlock* blk = &map[i_idx * width + j_idx];
+            MatrixBlock* blk = get_BlockMap(i_idx, j_idx, block_map);
             blk->i = i_idx;
             blk->j = j_idx;
             blk->is_unlocked = false;
@@ -44,10 +53,6 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
             }
         }
     }
-    BlockMap *block_map = malloc(sizeof(BlockMap));
-    block_map->blocks = map;
-    block_map->width = width;
-    block_map->height = height;
     return block_map;
 }
 
@@ -67,21 +72,21 @@ void print_blockMap(BlockMap *map)
     printf("\n");
 }
 
-MatrixBlock *get_BlockMap(int i, int j, BlockMap *map)
-{
-    return &map->blocks[i * map->width + j];
-}
-
 void update_BlockMap(MatrixBlock block, BlockMap *map)
 {
     int i = block.i;
     int j = block.j;
-
     MatrixBlock *updated_block = get_BlockMap(i, j, map);
-    updated_block->is_unlocked = true; // marcar bloque como procesado
 
-    memcpy(updated_block->row, block.row, BLOCK_WIDTH * sizeof(int));
-    memcpy(updated_block->col, block.col, BLOCK_HEIGHT * sizeof(int));
+    updated_block->is_unlocked = true;
+    for(int idx = 0; idx < updated_block->width; idx++)
+    {
+        updated_block->row[idx] = block.row[idx];
+    }
+    for(int idx = 0; idx < updated_block->height; idx++)
+    {
+        updated_block->col[idx] = block.col[idx];
+    }
     updated_block->diag = block.diag;
 }
 
@@ -135,18 +140,39 @@ void load_dependencies(MatrixBlock *block, BlockMap *map)
     {
         MatrixBlock *diag = get_MatrixBlock(i - 1, j - 1, map);
         block->diag = diag->diag;
-    }else{
-
     }
+    
     if (i > 0)
     {
         MatrixBlock *sup = get_MatrixBlock(i - 1, j, map);
-        memcpy(block->row, sup->row, BLOCK_WIDTH * sizeof(int));
+        for(int idx = 0; idx < block->width; idx++)
+        {
+            block->row[idx] = sup->row[idx];
+        }
     }
+    else{
+        block->diag = 0;
+        for(int idx = 0; idx < block->width; idx++)
+        {
+            block->row[idx] = 0;
+        }
+    }
+    
     if (j > 0)
     {
         MatrixBlock *izq = get_MatrixBlock(i, j - 1, map);
-        memcpy(block->col, izq->col, BLOCK_HEIGHT * sizeof(int));
+        for(int idx = 0; idx < block->height; idx++)
+        {
+            block->col[idx] = izq->col[idx];
+        }
+    }
+    else
+    {
+        block->diag = 0;
+        for(int idx = 0; idx < block->height; idx++)
+        {
+            block->col[idx] = 0;
+        }
     }
 }
 
@@ -162,39 +188,51 @@ void free_block(int *matrix)
     return;
 }
 
-void load_block(int *matrix, BlockParam *block_param)
+void load_block(int *matrix, MatrixBlock *block)
 {
-    // cargo la diagonal de la dependencia
-    matrix[0] = block_param->block.diag;
-    // cargo la fila superior de la dependencia
-    memcpy(matrix + 1, block_param->block.row, block_param->block.width * sizeof(int));
-    // cargo el valor de la columna izquierda de la dependencia
-    for (int i = 0; i < block_param->block.height; i++)
+    matrix[0] = block->diag;
+    for(int j = 0; j < block->width; j++)
     {
-        matrix[(i + 1) * BLOCK_WIDTH] = block_param->seq2[i];
+        matrix[j+1] = block->row[j];
+    }
+    for (int i = 0; i < block->height; i++)
+    {
+        matrix[(i + 1) * (BLOCK_WIDTH + 1)] = block->col[i];
+        for(int j = 0; j < BLOCK_WIDTH; j++)
+        {
+            matrix[(i + 1) * (BLOCK_WIDTH+1) + (j + 1)] = 0; //TODO hace falta?
+        }
     }
 }
 
 /*NO OLVIDAR QUE PARA LOS CALCULOS DE ABAJO SE TIENE EN CUENTA QUE LA MATRIX TIENE UNA FILA Y UNA COLUMNA EXTRA*/
-void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2)
+void extract_bottom_row(BlockResult *result_msg, int *matrix)
 {
-    memcpy(result_msg->block.row, matrix + len2 * BLOCK_WIDTH + 1, len1 * sizeof(int));
-    return;
-}
-
-void extract_right_column(BlockResult *result_msg, int *matrix, int len1, int len2)
-{
-    for (int i = 0; i < len2; i++)
+    int width = result_msg->block.width;
+    int height = result_msg->block.height;
+    int* last_row = matrix + height * (BLOCK_WIDTH + 1) + 1;
+    for(int i = 0; i < width; i++)
     {
-        result_msg->block.col[i] = matrix[(i + 1) * BLOCK_WIDTH + len1]; // i+1 porque la primera fila es la fila de la dependencia superior
+        result_msg->block.row[i] = last_row[i];
     }
-    return;
 }
 
-void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2)
+void extract_right_column(BlockResult *result_msg, int *matrix)
 {
-    result_msg->block.diag = matrix[len2 * BLOCK_WIDTH + len1]; // la celda diagonal es la ultima celda del bloque
-    return;
+    int width = result_msg->block.width;
+    int height = result_msg->block.height;
+    int* last_col = matrix + width; //TODO: esto suma width*length(int) ?
+    for (int i = 0; i < height; i++)
+    {
+        result_msg->block.col[i] = last_col[(i + 1) * (BLOCK_WIDTH + 1)];
+    }
+}
+
+void extract_last_diagonal(BlockResult *result_msg, int *matrix)
+{
+    int width = result_msg->block.width;
+    int height = result_msg->block.height;
+    result_msg->block.diag = matrix[height * ( BLOCK_WIDTH + 1 ) + width]; // la celda diagonal es la ultima celda del bloque
 }
 
 BlockParam *create_blockParam()
@@ -228,16 +266,33 @@ void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell
     result_msg->block.i = param_msg->block.i;
     result_msg->block.j = param_msg->block.j;
 
-    // OBS: el bloque comparte el ancho del bloque de arriba a el y el alto del bloque de la izquierda a el
+
     result_msg->block.width = param_msg->block.width;
     result_msg->block.height = param_msg->block.height;
 
-    extract_bottom_row(result_msg, matrix, param_msg->block.width, param_msg->block.height);
-    extract_right_column(result_msg, matrix, param_msg->block.width, param_msg->block.height);
-    extract_last_diagonal(result_msg, matrix, param_msg->block.width, param_msg->block.height);
+    extract_bottom_row(result_msg, matrix);
+    extract_right_column(result_msg, matrix);
+    extract_last_diagonal(result_msg, matrix);
 }
 
 void free_BlockResult(BlockResult *msg)
 {
     free(msg);
+}
+
+
+void print_info(MatrixBlock *block)
+{
+    printf("Block (%d, %d): width=%d, height=%d, is_unlocked=%d\n", block->i, block->j, block->width, block->height, block->is_unlocked);
+    printf("Row: ");
+    for(int i = 0; i < block->width; i++)
+    {
+        printf("%d ", block->row[i]);
+    }
+    printf("\nCol: ");
+    for(int i = 0; i < block->height; i++)
+    {
+        printf("%d ", block->col[i]);
+    }
+    printf("\nDiag: %d\n\n\n", block->diag);
 }

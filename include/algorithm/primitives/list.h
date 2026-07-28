@@ -10,6 +10,6 @@ typedef struct List{
 void init(List* list, char value);
 void push(List** list, char value);
 int length(List* list);
-char* print(List* list);
+char* print_list(List* list);
 
 #endif

@@ -7,6 +7,7 @@
 #include "utils/io.h"
 #include "utils/sequences.h"
 #include "utils/utils.h"
+#include "utils/reports.h"
 
 #include "algorithm/master.h"
 #include "algorithm/slave.h"
@@ -18,7 +19,7 @@ int run_master(int argc, char **argv)
     int mode = read_mode(argc, argv);
     if (mode == MODE_INVALID)
     {
-        printf("Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
+        print(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
         return EXIT_FAILURE;
     }
 
@@ -26,6 +27,7 @@ int run_master(int argc, char **argv)
     CharArray **seqs = execute_mode(mode, params);
     if (seqs == NULL)
     {
+        print(MASTER_RANK, "Error ejecutando modo: no se pudieron cargar las secuencias\n");
         return EXIT_SUCCESS;
     }
     CharArray *seq1 = seqs[0];
@@ -33,7 +35,6 @@ int run_master(int argc, char **argv)
 
     // nueva funcion que representa al master
     master(seq1, seq2);
-
     free(seq1->data);
     free(seq2->data);
     free(seq1);

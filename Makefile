@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude
 LDFLAGS = -fopenmp -lm
 
 MAIN_SRC = src/main.c
-UTILS_SRC = src/utils/io.c src/utils/sequences.c
+UTILS_SRC = src/utils/io.c src/utils/sequences.c src/utils/reports.c
 ALGORITHM_SRC = src/algorithm/algorithm.c src/algorithm/blocks.c src/algorithm/master.c src/algorithm/slave.c
 PRIMITIVES_SRC = src/algorithm/primitives/list.c src/algorithm/primitives/queue.c
 HPC_SRC = src/hpc/mpi_handler.c

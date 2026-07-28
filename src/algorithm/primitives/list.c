@@ -32,7 +32,7 @@ int length(List* list){
     return size;
 }
 
-char* print(List* list){
+char* print_list(List* list){
     int len = length(list);
     char* res = malloc(len + 1);
     int i = 0;

@@ -56,7 +56,7 @@ void print_blockMap(BlockMap *map);
 
 void update_BlockMap(MatrixBlock block, BlockMap *map);
 
-MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
+// MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
 
 BlockParam *create_blockParam();
 
@@ -70,17 +70,17 @@ int *create_block(int width, int height);
 
 void free_block(int *block_dscr);
 
-void load_block(int *matrix, BlockParam *block_param);
+void load_block(int *matrix, MatrixBlock *block);
 
 // void load_block(BlockInfo *block_dscr, int index_x, int index_y, int start_seq1, int start_seq2, int num_rows, int num_cols, int *top_row, int *left_col, int prev_diag);
 
 // void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2);
 
-void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2);
+// void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2);
 
-void extract_right_column(BlockResult *result_msg, int *matrix, int len1, int len2);
+// void extract_right_column(BlockResult *result_msg, int *matrix, int len1, int len2);
 
-void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2);
+// void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2);
 
 // BlockStartMessage *create_block_start_message();
 
@@ -96,5 +96,6 @@ void free_BlockResult(BlockResult *msg);
 
 // void extract_right_column(BlockInfo* block_dscr);
 
+void print_info(MatrixBlock *block);
 
 #endif
