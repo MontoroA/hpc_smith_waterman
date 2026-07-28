@@ -1,17 +1,18 @@
 #ifndef BLOCKS_H
 #define BLOCKS_H
 
-#include <stdlib.h>
 #include <mpi.h>
-#include "hpc/mpi_handler.h"
-#include "algorithm/primitives/primitives.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
-typedef struct
-{
-    int i;
-    int j;
-    int max_score;
-} MatrixCell;
+#include "algorithm/primitives.h"
+#include "algorithm/algorithm.h"
+#include "runtime/mpi_handler.h"
+#include "collections/arrays.h"
+
+#define BLOCK_HEIGHT 1000
+#define BLOCK_WIDTH 1000
+
 
 typedef struct
 {

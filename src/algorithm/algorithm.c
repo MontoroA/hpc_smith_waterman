@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
-#include "algorithm/primitives/primitives.h"
-#include "algorithm/primitives/list.h"
-#include "utils/utils.h"
+#include "algorithm/algorithm.h"
+#include "collections/list.h"
+#include "collections/arrays.h"
 #include "algorithm/blocks.h"
 
 int max_val(int *matrix, int i, int j, char *seq1, char *seq2)

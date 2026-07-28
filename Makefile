@@ -3,12 +3,12 @@ CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude
 LDFLAGS = -fopenmp -lm
 
 MAIN_SRC = src/main.c
-UTILS_SRC = src/utils/io.c src/utils/sequences.c src/utils/reports.c
+UTILS_SRC = src/utils/cli.c src/utils/sequences.c src/utils/reports.c
 ALGORITHM_SRC = src/algorithm/algorithm.c src/algorithm/blocks.c src/algorithm/master.c src/algorithm/slave.c
-PRIMITIVES_SRC = src/algorithm/primitives/list.c src/algorithm/primitives/queue.c
-HPC_SRC = src/hpc/mpi_handler.c
+PRIMITIVES_SRC = src/collections/list.c src/collections/queue.c
+RUNTIME_SRC = src/runtime/mpi_handler.c src/runtime/messages.c
 
-SRC = $(MAIN_SRC) $(UTILS_SRC) $(ALGORITHM_SRC) $(PRIMITIVES_SRC) $(HPC_SRC)
+SRC = $(MAIN_SRC) $(UTILS_SRC) $(ALGORITHM_SRC) $(PRIMITIVES_SRC) $(RUNTIME_SRC)
 
 OBJDIR = build
 OBJ = $(patsubst src/%.c,build/%.o,$(SRC))

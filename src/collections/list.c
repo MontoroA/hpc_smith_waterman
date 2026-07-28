@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "algorithm/primitives/list.h"
+#include "collections/list.h"
 
-void init(List* list, char value){
+void init_list(List* list, char value){
     list->value = value;
     list->next = NULL;
 }
@@ -11,7 +11,7 @@ void init(List* list, char value){
 void push(List** list, char value){
     if(*list == NULL){
         *list = malloc(sizeof(List));
-        init(*list, value);
+        init_list(*list, value);
         return;
     }
     List* new_node = malloc(sizeof(List));

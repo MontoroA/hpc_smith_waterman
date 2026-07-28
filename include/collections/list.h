@@ -7,7 +7,7 @@ typedef struct List{
     struct List* next;
 } List;
 
-void init(List* list, char value);
+// void init_list(List* list, char value);
 void push(List** list, char value);
 int length(List* list);
 char* print_list(List* list);

@@ -1,10 +1,6 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
-#include <stdbool.h>
-
-#include "utils/utils.h"
-
 #define M       2                       // positive reward for similarity match
 #define mu      10                      // negative reward for similarity mismatch
 #define GAP_W   3                       // gap penalty constant
@@ -18,5 +14,13 @@ typedef enum {
     DIAG = 1,
     LEFT = 2
 } Direction;
+
+
+typedef struct
+{
+    int i;
+    int j;
+    int max_score;
+} MatrixCell;
 
 #endif

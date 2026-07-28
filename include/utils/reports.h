@@ -2,6 +2,8 @@
 #define REPORTS_H
 
 
-void print(int cnxt_pid, const char *fmt, ...);
+void logging(int cnxt_pid, const char *fmt, ...);
+
+int reports(double start, double end);
 
 #endif

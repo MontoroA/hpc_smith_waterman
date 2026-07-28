@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "utils/io.h"
+#include "utils/cli.h"
 #include "utils/reports.h"
 
 int read_mode(int argc, char **argv)
@@ -89,24 +89,17 @@ int read_mode(int argc, char **argv)
         break;
 
     default:
-        print(0, "Modo invalido: %d\n", mode);
-        print(0, "Modos validos:\n");
-        print(0, "1: Cargar secuencias por defecto. No recibe parametros.\n");
-        print(0, "2: Cargar secuencias desde archivos. Recibe dos parametros: <archivo1> <archivo2>\n");
-        print(0, "3: Cargar secuencias desde cadenas de caracteres. Recibe dos parametros: <seq1> <seq2>\n");
-        print(0, "4: Generar secuencia aleatoria. Recibe un parametro: <exponente>\n");
-        print(0, "5: Listar secuencias en un directorio. Recibe cero o un parametro: [<subdirectorio>]\n");
-        print(0, "6: Imprimir secuencia desde un archivo. Recibe un parametro: <path>\n");
-        print(0, "7: Eliminar secuencia desde un archivo. Recibe un parametro: <path>\n");
+        logging(0, "Modo invalido: %d\n", mode);
+        logging(0, "Modos validos:\n");
+        logging(0, "1: Cargar secuencias por defecto. No recibe parametros.\n");
+        logging(0, "2: Cargar secuencias desde archivos. Recibe dos parametros: <archivo1> <archivo2>\n");
+        logging(0, "3: Cargar secuencias desde cadenas de caracteres. Recibe dos parametros: <seq1> <seq2>\n");
+        logging(0, "4: Generar secuencia aleatoria. Recibe un parametro: <exponente>\n");
+        logging(0, "5: Listar secuencias en un directorio. Recibe cero o un parametro: [<subdirectorio>]\n");
+        logging(0, "6: Imprimir secuencia desde un archivo. Recibe un parametro: <path>\n");
+        logging(0, "7: Eliminar secuencia desde un archivo. Recibe un parametro: <path>\n");
         return MODE_INVALID;
     }
 
     return mode;
-}
-
-int reports(double start, double end)
-{
-    double tiempo = end - start;
-    printf("Tiempo de ejecución: %f segundos\n", tiempo);
-    return 0;
 }

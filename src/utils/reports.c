@@ -3,9 +3,8 @@
 #include <string.h>
 #include <time.h>
 
-
 #include "utils/reports.h"
-#include "hpc/mpi_handler.h"
+#include "runtime/mpi_handler.h"
 
 
 char* now(){
@@ -28,7 +27,7 @@ char* now(){
     return strtok(buffer, "\n");
 }
 
-void print(int cnxt_pid, const char *fmt, ...)
+void logging(int cnxt_pid, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -45,4 +44,11 @@ void print(int cnxt_pid, const char *fmt, ...)
     }
 
     va_end(args);
+}
+
+int reports(double start, double end)
+{
+    double tiempo = end - start;
+    printf("Tiempo de ejecución: %f segundos\n", tiempo);
+    return 0;
 }

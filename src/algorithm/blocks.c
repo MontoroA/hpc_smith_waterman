@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "algorithm/blocks.h"
+#include "collections/arrays.h"
 #include "algorithm/algorithm.h"
 
 
@@ -348,38 +350,3 @@ void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharA
     memcpy(msg->seq2, seq2->data + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
 }
 
-void send_BlockParam(BlockParam *msg, int dest, int tag)
-{
-    MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, tag, MPI_COMM_WORLD);
-}
-
-void receive_BlockResult(BlockResult *msg, MPI_Status *status)
-{
-    MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, MPI_ANY_SOURCE, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
-}
-
-void receive_TracebackResult(TracebackResult *msg, int *cnxt_pid, MPI_Status *status)
-{
-    MPI_Recv(msg, sizeof(TracebackResult), MPI_BYTE, *cnxt_pid, TAG_TRACEBACK_RESULT, MPI_COMM_WORLD, status);
-}
-
-void send_TracebackResult(TracebackResult *msg, int tag)
-{
-    MPI_Send(msg, sizeof(TracebackResult), MPI_BYTE, MASTER_RANK, tag, MPI_COMM_WORLD);
-}
-
-void send_BlockResult(BlockResult *msg)
-{
-    MPI_Send(msg, sizeof(BlockResult), MPI_BYTE, MASTER_RANK, TAG_BLOCK_RESULT, MPI_COMM_WORLD);
-}
-
-void receive_BlockParam(BlockParam *msg, MPI_Status *status)
-{
-    MPI_Recv(msg,
-             sizeof(BlockParam),
-             MPI_BYTE,
-             MASTER_RANK,
-             MPI_ANY_TAG,
-             MPI_COMM_WORLD,
-             status);
-}

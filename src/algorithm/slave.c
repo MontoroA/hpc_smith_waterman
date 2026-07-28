@@ -1,11 +1,12 @@
-#include <stdio.h>
 #include <mpi.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "algorithm/slave.h"
 #include "algorithm/algorithm.h"
-#include "hpc/mpi_handler.h"
 #include "algorithm/blocks.h"
+#include "runtime/messages.h"
 #include "utils/reports.h"
 
 void slave()
@@ -32,12 +33,12 @@ void slave()
     printf("(process %d) ready to work \n", rank);
     while (true)
     {
-        print(rank, "waiting for data\n");
+        logging(rank, "waiting for data\n");
         receive_BlockParam(param_msg, &status);
 
         if (status.MPI_TAG == TAG_TERMINATE)
         {
-            print(rank, "received terminate signal\n");
+            logging(rank, "received terminate signal\n");
             break;
         }
 
@@ -48,7 +49,7 @@ void slave()
 
         if (status.MPI_TAG != TAG_TRACEBACK_RUN)
         {
-            print(rank, "receives block (%d, %d)\n", param_msg->block.i, param_msg->block.j);
+            logging(rank, "receives block (%d, %d)\n", param_msg->block.i, param_msg->block.j);
             load_block(matrix, &param_msg->block);
 
             printf("(process %d) working on block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);

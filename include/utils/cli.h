@@ -12,6 +12,4 @@ static const int MODE_DELETE_SEQUENCE  = 7;
 
 int read_mode(int argc, char** argv);
 
-int reports(double start, double end);
-
 #endif

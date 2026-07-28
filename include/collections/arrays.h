@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef ARRAYS_H
+#define ARRAYS_H
 
 typedef struct{
     int* data;
@@ -10,5 +10,6 @@ typedef struct{
     char* data;
     int length;
 } CharArray;
+
 
 #endif

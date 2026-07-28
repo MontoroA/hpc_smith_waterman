@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#include "utils/io.h"
+#include "utils/cli.h"
 #include "utils/sequences.h"
-#include "hpc/mpi_handler.h"
+#include "runtime/mpi_handler.h"
 
 
 int main(int argc, char* argv[])

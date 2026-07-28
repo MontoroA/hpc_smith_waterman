@@ -1,8 +1,6 @@
 #include <stdlib.h>
 
-#include "algorithm/primitives/queue.h"
-
-
+#include "collections/queue.h"
 
 Queue* createQueue(int size)    
 {

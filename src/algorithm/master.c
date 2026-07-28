@@ -5,8 +5,8 @@
 #include "algorithm/master.h"
 #include "algorithm/blocks.h"
 #include "algorithm/algorithm.h"
-#include "algorithm/primitives/primitives.h"
-#include "algorithm/primitives/queue.h"
+#include "collections/queue.h"
+#include "runtime/messages.h"
 #include "utils/reports.h"
 
 typedef enum
@@ -26,17 +26,21 @@ typedef struct
 } TracebackWorker;
 
 
-// int send_BlockParam(BlockParam *msg, int dest)
-// {
-//     MPI_Send(msg, sizeof(BlockParam), MPI_BYTE, dest, TAG_BLOCK_PARAM, MPI_COMM_WORLD);
-//     return 0; //TODO por que un int?
-// }
 
-
-// void receive_BlockResult(BlockResult *msg, MPI_Status *status)
-// {
-//     MPI_Recv(msg, sizeof(BlockResult), MPI_BYTE, MPI_ANY_SOURCE, TAG_BLOCK_RESULT, MPI_COMM_WORLD, status);
-// }
+CharArray* seq1;
+CharArray* seq2;
+BlockMap*    map;
+Queue*       queue;
+bool*        proc_available;
+BlockResult* result_msg;
+BlockParam*  param_msg;
+MatrixBlock* block;
+int nro_procs;
+int cnxt_pid;
+int working_procs;
+MPI_Status status;
+MatrixBlock* max_score_block;
+TracebackResult *traceback_msg;
 
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 {
@@ -52,7 +56,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         {
             load_dependencies(diag, map);
             enqueue(queue, *diag);
-            print(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
+            logging(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
         }
     }
 
@@ -62,7 +66,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         if(block_is_ready(der, map)){
             load_dependencies(der,map);
             enqueue(queue, *der);
-            print(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
+            logging(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
         }
     }
 
@@ -72,7 +76,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         if(block_is_ready(inf, map)){
             load_dependencies(inf,map);
             enqueue(queue, *inf);
-            print(MASTER_RANK, "enqueued block (%d, %d)\n", inf->i, inf->j);
+            logging(MASTER_RANK, "enqueued block (%d, %d)\n", inf->i, inf->j);
         }
     }
 }
@@ -82,7 +86,7 @@ void enqueue_ready_blocks_traceback(Queue *queue, BlockMap *map, MatrixBlock *bl
     int i = block->i;
     int j = block->j;
 
-    if ((i - 1 >= 0) && (j - 1 >= 0))
+    if ((i > 0) && (j > 0))
     {
         MatrixBlock *diag = get_MatrixBlock(i - 1, j - 1, map);
         if (block_is_ready(diag, map))
@@ -93,7 +97,7 @@ void enqueue_ready_blocks_traceback(Queue *queue, BlockMap *map, MatrixBlock *bl
         }
     }
 
-    if ((j - 1) >= 0)
+    if (j  > 0)
     {
         MatrixBlock *der = get_MatrixBlock(i, j - 1, map);
         if (block_is_ready(der, map))
@@ -104,7 +108,7 @@ void enqueue_ready_blocks_traceback(Queue *queue, BlockMap *map, MatrixBlock *bl
         }
     }
 
-    if ((i - 1) >= 0)
+    if (i > 0)
     {
         MatrixBlock *inf = get_MatrixBlock(i - 1, j, map);
         if (block_is_ready(inf, map))
@@ -126,7 +130,7 @@ void update_TracebackWorkers(TracebackWorker *traceback_workers, int block_i, in
 
 int get_TracebackWorker(TracebackWorker *traceback_workers, int block_i, int block_j)
 {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < nro_procs; i++)
     {
         if (traceback_workers[i].block_i == block_i && traceback_workers[i].block_j == block_j)
         {
@@ -193,53 +197,41 @@ void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
     block->max_cell.max_score = traceback_msg->next_starting_cell.max_score;
 }
 
-void master(CharArray *seq1, CharArray *seq2)
-{
-    print(MASTER_RANK, "initialized\n");
-    BlockMap *map = create_Map(seq1, seq2);
-    Queue *queue = createQueue(max(seq1->length, seq2->length));
 
-    int nro_procs;
+void init(){
+    logging(MASTER_RANK, "initialized\n");
+    map = create_Map(seq1, seq2);
+    queue = createQueue(max(seq1->length, seq2->length));
+    result_msg = create_blockResult();
+    param_msg = create_blockParam();
+    load_BlockParam(param_msg, block, seq1, seq2);
+    block = get_MatrixBlock(0, 0, map);
+    load_dependencies(block,map);
+    
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
-    bool *proc_available = malloc(nro_procs * sizeof(bool));
+    proc_available = malloc(nro_procs * sizeof(bool));
     for (int i = 1; i < nro_procs; i++)
     {
         proc_available[i] = true;
     }
+    cnxt_pid = 1;
+    working_procs = 1;
+}
 
-    BlockResult *result_msg = create_blockResult();
-    BlockParam *param_msg = create_blockParam();
-    MatrixBlock *block = get_MatrixBlock(0, 0, map);
-    //row and col of 0s
-    // for(int i = 0; i < BLOCK_WIDTH; i++){
-    //     block->row[i] = 0;
-    // }
-    // for(int i = 0; i < BLOCK_HEIGHT; i++){
-    //     block->col[i] = 0;
-    // }
-    // block->diag = 0;
-    load_dependencies(block,map);
 
-    load_BlockParam(param_msg, block, seq1, seq2);
-    
-
-    print(MASTER_RANK, "ready for distributing work\n");
-    // int count = 0;
-    // MPI_Request request;
-    int cnxt_pid = 1;
-    MPI_Status status;
-
-    send_BlockParam(param_msg, cnxt_pid, TAG_BLOCK_PARAM);
-
-    int working_procs = 1;
-
+void completion(){
     while (true)
     {
         receive_BlockResult(result_msg, &status);
         cnxt_pid = status.MPI_SOURCE;
-        print(MASTER_RANK, "received result for block (%d, %d) from process %d\n", result_msg->block.i, result_msg->block.j, cnxt_pid);
+        logging(MASTER_RANK, "received result for block (%d, %d) from process %d\n", result_msg->block.i, result_msg->block.j, cnxt_pid);
         if (status.MPI_TAG == TAG_BLOCK_RESULT)
         {
+            if (result_msg->result.max_score > max_score_block->max_cell.max_score)
+            {
+                // TODO esta memoria se sobreescribe, hay que copiarla
+                max_score_block = &result_msg->block;
+            }
             update_BlockMap(result_msg->block, map);
             enqueue_ready_blocks(queue, map, &result_msg->block);
 
@@ -253,7 +245,7 @@ void master(CharArray *seq1, CharArray *seq2)
                     if (isEmpty(queue))
                         break;
                     block = dequeue(queue);
-                    print(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
+                    logging(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
                     load_BlockParam(param_msg, block, seq1, seq2);
                     send_BlockParam(param_msg, i, TAG_BLOCK_PARAM);
                     proc_available[i] = false;
@@ -267,23 +259,18 @@ void master(CharArray *seq1, CharArray *seq2)
             }
         }
     }
+}
 
-    // arranco con el traceback
+
+void traceback(){
     List *matched_seq1 = NULL;
     List *matched_seq2 = NULL;
 
-    TracebackResult *traceback_msg = create_tracebackResult();
+    traceback_msg = create_tracebackResult();
+    TracebackWorker traceback_workers[nro_procs];
+    block = max_score_block;
 
-    // arreglo donde guardo el estado actual de los 4 workers
-    TracebackWorker traceback_workers[4];
-
-    // bloque donde empieza el traceback, que es el que tiene el max score
-    block = get_TracebackStartingBlock(map);
-
-    // en este caso el starting_cell es el max_cell guardado en el bloque
     load_BlockParam(param_msg, block, seq1, seq2);
-
-    // mando el bloque a trabajar con el traceback
     send_BlockParam(param_msg, 1, TAG_TRACEBACK_FIRST_RUN);
 
     // actualizo el estado del worker
@@ -291,10 +278,9 @@ void master(CharArray *seq1, CharArray *seq2)
 
     working_procs = 1;
 
-    // encolo los otros 3 bloques
     enqueue_ready_blocks_traceback(queue, map, block);
 
-    for (int i = 2; i < 5; i++)
+    for (int i = 1; i < nro_procs + 1; i++)
     {
         block = dequeue(queue);
         printf("(master process) popped block (%d, %d): sent to process %d \n", block->i, block->j, i);
@@ -376,7 +362,7 @@ void master(CharArray *seq1, CharArray *seq2)
             working_procs++;
 
             int i = 1;
-            while (i < 5)
+            while (i < nro_procs + 1)
             {
                 // solo se manda a workers que no estan ejecutando (esten o no atrasados)
                 if (traceback_workers[i - 1].state != WORKING || traceback_workers[i - 1].state != NEIGHBOUR_DELAYED)
@@ -404,16 +390,24 @@ void master(CharArray *seq1, CharArray *seq2)
             }
         }
     }
-    // print_block_map(map, seq1, seq2);
- 
+}
+
+void master(CharArray *sequence1, CharArray *sequence2)
+{
+    seq1 = sequence1;
+    seq2 = sequence2;
+    init();
+
+    logging(MASTER_RANK, "ready for distributing work\n");
+    send_BlockParam(param_msg, cnxt_pid, TAG_BLOCK_PARAM);
+
+    completion();
+
+    traceback();
+
     for (int i = 1; i < nro_procs; i++)
     {
-        MPI_Send(NULL,
-                 0,
-                 MPI_BYTE,
-                 i,
-                 TAG_TERMINATE,
-                 MPI_COMM_WORLD);
+        MPI_Send(NULL, 0, MPI_BYTE, i, TAG_TERMINATE, MPI_COMM_WORLD);
     }
 
     free(map);
