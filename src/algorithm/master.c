@@ -8,6 +8,7 @@
 #include "collections/queue.h"
 #include "runtime/messages.h"
 #include "utils/reports.h"
+#include "runtime/checkpoint.h"
 
 typedef enum
 {
@@ -25,22 +26,22 @@ typedef struct
     State state;
 } TracebackWorker;
 
-
-
-CharArray* seq1;
-CharArray* seq2;
-BlockMap*    map;
-Queue*       queue;
-bool*        proc_available;
-BlockResult* result_msg;
-BlockParam*  param_msg;
-MatrixBlock* block;
+CharArray *seq1;
+CharArray *seq2;
+BlockMap *map;
+Queue *queue;
+bool *proc_available;
+BlockResult *result_msg;
+BlockParam *param_msg;
+MatrixBlock *block;
 int nro_procs;
 int cnxt_pid;
 int working_procs;
 MPI_Status status;
-MatrixBlock* max_score_block;
+MatrixBlock *max_score_block;
 TracebackResult *traceback_msg;
+FILE *checkpoint;
+int wavefront_number = 0;
 
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 {
@@ -59,22 +60,24 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
             logging(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
         }
     }
-    
+
     if (j < (width - 1))
     {
         MatrixBlock *der = get_MatrixBlock(i, j + 1, map);
-        if(block_is_ready(der, map)){
-            load_dependencies(der,map);
+        if (block_is_ready(der, map))
+        {
+            load_dependencies(der, map);
             enqueue(queue, *der);
             logging(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
         }
     }
-    
+
     if (i < (height - 1))
     {
         MatrixBlock *inf = get_MatrixBlock(i + 1, j, map);
-        if(block_is_ready(inf, map)){
-            load_dependencies(inf,map);
+        if (block_is_ready(inf, map))
+        {
+            load_dependencies(inf, map);
             enqueue(queue, *inf);
             logging(MASTER_RANK, "enqueued block (%d, %d)\n", inf->i, inf->j);
         }
@@ -97,7 +100,7 @@ void enqueue_ready_blocks_traceback(Queue *queue, BlockMap *map, MatrixBlock *bl
         }
     }
 
-    if (j  > 0)
+    if (j > 0)
     {
         MatrixBlock *der = get_MatrixBlock(i, j - 1, map);
         if (block_is_ready(der, map))
@@ -197,18 +200,20 @@ void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
     block->max_cell.max_score = traceback_msg->next_starting_cell.max_score;
 }
 
+void init()
+{
+    checkpoint = create_checkpoint_file("checkpoint.bin");
 
-void init(){
     logging(MASTER_RANK, "initialized\n");
     map = create_Map(seq1, seq2);
     queue = createQueue(max(seq1->length, seq2->length));
     result_msg = create_blockResult();
     param_msg = create_blockParam();
     block = get_MatrixBlock(0, 0, map);
-    load_dependencies(block,map);
+    load_dependencies(block, map);
     max_score_block = block;
     load_BlockParam(param_msg, block, seq1, seq2);
-    
+
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
     proc_available = malloc(nro_procs * sizeof(bool));
     for (int i = 1; i < nro_procs; i++)
@@ -219,10 +224,12 @@ void init(){
     working_procs = 1;
 }
 
-
-void completion(){
+void completion()
+{
     while (true)
     {
+        auto_save_checkpoint(wavefront_number, checkpoint, map);
+
         receive_BlockResult(result_msg, &status);
         cnxt_pid = status.MPI_SOURCE;
         logging(MASTER_RANK, "received result for block (%d, %d) from process %d\n", result_msg->block.i, result_msg->block.j, cnxt_pid);
@@ -262,8 +269,8 @@ void completion(){
     }
 }
 
-
-void traceback(){
+void traceback()
+{
     List *matched_seq1 = NULL;
     List *matched_seq2 = NULL;
 
