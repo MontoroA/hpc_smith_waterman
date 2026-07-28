@@ -9,8 +9,8 @@ typedef struct
 
 FILE *create_checkpoint_file(const char *filename);
 
-void save_wavefront_to_checkpoint(FILE *file, int wavefront_number, BlockMap *map);
+int save_wavefront_to_checkpoint(FILE *file, int wavefront_number, BlockMap *map);
 
-void load_from_checkpoint(FILE *file, BlockMap *map);
+void load_from_checkpoint(const char *filename, BlockMap *map);
 
 void auto_save_checkpoint(int *next_wavefront_number, FILE *fp, BlockMap *map);

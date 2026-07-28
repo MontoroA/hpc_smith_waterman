@@ -200,9 +200,16 @@ void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
     block->max_cell.max_score = traceback_msg->next_starting_cell.max_score;
 }
 
-void init()
+void init(bool load_checkpoint)
 {
-    checkpoint = create_checkpoint_file("checkpoint.bin");
+    if (!load_checkpoint)
+    {
+        checkpoint = create_checkpoint_file("checkpoint.bin");
+    }
+    else
+    {
+        load_from_checkpoint("checkpoint.bin", map);
+    }
 
     logging(MASTER_RANK, "initialized\n");
     map = create_Map(seq1, seq2);
@@ -400,11 +407,11 @@ void traceback()
     }
 }
 
-void master(CharArray *sequence1, CharArray *sequence2)
+void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
 {
     seq1 = sequence1;
     seq2 = sequence2;
-    init();
+    init(load_checkpoint);
 
     logging(MASTER_RANK, "ready for distributing work\n");
     send_BlockParam(param_msg, cnxt_pid, TAG_BLOCK_PARAM);

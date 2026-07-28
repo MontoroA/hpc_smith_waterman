@@ -3,6 +3,6 @@
 
 #include "collections/arrays.h"
 
-void master(CharArray *seq1, CharArray *seq2);
+void master(CharArray *seq1, CharArray *seq2, bool load_checkpoint);
 
 #endif
