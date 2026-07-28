@@ -12,7 +12,6 @@
 #include "algorithm/slave.h"
 #include "algorithm/master.h"
 
-
 int run_master(int argc, char **argv)
 {
     int mode = read_mode(argc, argv);
@@ -21,7 +20,7 @@ int run_master(int argc, char **argv)
         logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
         return EXIT_FAILURE;
     }
-    
+
     char **params = argv + 2;
     CharArray **seqs = execute_mode(mode, params);
     if (seqs != NULL)
@@ -29,8 +28,9 @@ int run_master(int argc, char **argv)
         double start = MPI_Wtime();
         CharArray *seq1 = seqs[0];
         CharArray *seq2 = seqs[1];
-    
-        master(seq1, seq2);
+        bool load_checkpoint = false; // TODO add cli option to load checkpoint from start
+
+        master(seq1, seq2, load_checkpoint);
 
         free(seq1->data);
         free(seq2->data);
