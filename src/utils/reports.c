@@ -42,7 +42,15 @@ void logging(int cnxt_pid, const char *fmt, ...)
         printf("[PROCESS %d %s] - ", cnxt_pid, now());
         vprintf(fmt, args);
     }
+    va_end(args);
+    printf("\n");
+}
 
+void logging_wo_header(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
     va_end(args);
 }
 

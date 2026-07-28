@@ -38,3 +38,14 @@ void receive_BlockParam(BlockParam *msg, MPI_Status *status)
              MPI_COMM_WORLD,
              status);
 }
+
+
+void terminate_Workers()
+{
+    int nro_procs;
+    MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
+    for(int i = 1; i < nro_procs; i++)
+    {
+        MPI_Send(NULL, 0, MPI_BYTE, i, TAG_TERMINATE, MPI_COMM_WORLD);
+    }
+}

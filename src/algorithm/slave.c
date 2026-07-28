@@ -30,15 +30,15 @@ void slave()
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
     MatrixCell *starting_cell = malloc(sizeof(MatrixCell));
 
-    printf("(process %d) ready to work \n", rank);
+    logging(rank, "ready to work");
     while (true)
     {
-        logging(rank, "waiting for data\n");
+        logging(rank, "waiting for data");
         receive_BlockParam(param_msg, &status);
 
         if (status.MPI_TAG == TAG_TERMINATE)
         {
-            logging(rank, "received terminate signal\n");
+            logging(rank, "received terminate signal");
             break;
         }
 
@@ -49,23 +49,21 @@ void slave()
 
         if (status.MPI_TAG != TAG_TRACEBACK_RUN)
         {
-            logging(rank, "receives block (%d, %d)\n", param_msg->block.i, param_msg->block.j);
+            logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
             load_block(matrix, &param_msg->block);
-
-            printf("(process %d) working on block (%d, %d)\n", rank, param_msg->block.i, param_msg->block.j);
             complete_block(matrix, max_cell, seq1, seq2);
 
             if (status.MPI_TAG == TAG_BLOCK_PARAM)
             {
                 load_blockResult(result_msg, matrix, max_cell, param_msg);
-                printf("(process %d) sending result for block (%d, %d) with max score %d \n", rank, result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
+                logging(rank, "sending result for block (%d, %d) with max score %d ", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
                 send_BlockResult(result_msg);
             }
 
             if (status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR)
             {
                 // aviso al master que este bloque ya se calculo por adelantado
-                printf("(process %d) sending traceback neighbour ready for block (%d, %d)\n", rank, traceback_msg->block_i, traceback_msg->block_j);
+                logging(rank, " sending traceback neighbour ready for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
                 send_TracebackResult(traceback_msg, TAG_TRACEBACK_NEIGHBOUR_READY);
             }
 
@@ -77,7 +75,7 @@ void slave()
 
                 load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
 
-                printf("(process %d) sending traceback result for block (%d, %d) \n", rank, traceback_msg->block_i, traceback_msg->block_j);
+                logging(rank, " sending traceback result for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
                 send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
             }
         }
@@ -89,7 +87,7 @@ void slave()
 
             load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
 
-            printf("(process %d) sending traceback result for block (%d, %d) \n", rank, traceback_msg->block_i, traceback_msg->block_j);
+            logging(rank, " sending traceback result for block (%d, %d) ", traceback_msg->block_i, traceback_msg->block_j);
             send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
         }
     }

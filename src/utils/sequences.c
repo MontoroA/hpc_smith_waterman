@@ -14,7 +14,7 @@
 
 #define BUFFER_SIZE 8192
 
-static char* path = "data/"; 
+static char* path = "data"; 
 static char* path_small = "data/small/"; 
 static char* path_medium = "data/medium/"; 
 static char* path_large = "data/large/"; 
@@ -61,6 +61,7 @@ CharArray* load_sequence_in_folders(const char* filename){
 }
 
 // ojo: tienen largo 1 de mas
+// TODO resolver el NULL al final. Va?
 CharArray* generate_sequence(int exp) {
     srand(time(NULL));
     char bases[] = {'A', 'C', 'G', 'T'};
@@ -150,7 +151,7 @@ void list_files(const char *path) {
         if (S_ISDIR(mode)) {
             list_files(fullpath);
         } else if (S_ISREG(mode)) {
-            logging(0, "%s\n", fullpath);
+            logging_wo_header("%s\n", fullpath);
         }
     }
     closedir(dir);
@@ -161,6 +162,7 @@ int print_sequence(const char *filepath) {
     if (file == NULL) {
         return 1;
     }
+    logging(0, "Printing sequence from %s", filepath);
 
     char buffer[BUFFER_SIZE];
     size_t bytes_read;
@@ -174,7 +176,7 @@ int print_sequence(const char *filepath) {
         return 1;
     }
     fclose(file);
-    logging(0, "\n");
+    printf("\n");
     return 0;
 }
 
@@ -187,18 +189,30 @@ int print_sequence(const char *filepath) {
 */
 CharArray** execute_mode(int mode, char** params){
     CharArray** seqs = NULL;
-    int err;
+    int err = 0;
     switch(mode){
         case MODE_DEFAULT:
             seqs = malloc(2*sizeof(CharArray*));
             seqs[0] = load_sequence_in_folders(default_seq1);
             seqs[1] = load_sequence_in_folders(default_seq2);
+            if (seqs[0] == NULL || seqs[1] == NULL) {
+                free(seqs[0]);
+                free(seqs[1]);
+                free(seqs);
+                return NULL;
+            }
             break;
             
         case MODE_FROM_FILES:
             seqs = malloc(2*sizeof(CharArray*));
             seqs[0] = load_sequence_in_folders(params[0]);
             seqs[1] = load_sequence_in_folders(params[1]);
+            if (seqs[0] == NULL || seqs[1] == NULL) {
+                free(seqs[0]);
+                free(seqs[1]);
+                free(seqs);
+                return NULL;
+            }
             break;
             
         case MODE_FROM_STRINGS:
@@ -222,9 +236,6 @@ CharArray** execute_mode(int mode, char** params){
             CharArray* generated_seq = generate_sequence(exponent);
             char* folder =  decide_folder_based_on_size(generated_seq->length);
             err = save_sequence(folder, generated_seq);
-            if(err != 0){
-                logging(0, "Error saving generated sequence\n");
-            }
             break;
             
         case MODE_LIST_SEQUENCES:
@@ -234,6 +245,7 @@ CharArray** execute_mode(int mode, char** params){
             } else{
                 dir = path;
             }
+            logging(0, "Listing files in directory: %s\n", dir);
             list_files(dir);
             break;
             
@@ -249,6 +261,11 @@ CharArray** execute_mode(int mode, char** params){
             // char *delete_path = params[0];
             logging(0, "Delete sequence mode is not implemented yet.\n");
             break;
+    }
+    if(err != 0){
+        logging(0, "Error ejecutando modo: no se pudieron cargar las secuencias\n");
+        free(seqs);
+        return NULL;
     }
     return seqs;
 }

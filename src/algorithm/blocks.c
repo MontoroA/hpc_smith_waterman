@@ -39,7 +39,7 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
             blk->j = j_idx;
             blk->is_unlocked = false;
 
-            int start_seq1 = i_idx * BLOCK_WIDTH;
+            int start_seq1 = j_idx * BLOCK_WIDTH;
             if (start_seq1 + BLOCK_WIDTH <= seq1->length)
             {
                 blk->width = BLOCK_WIDTH;
@@ -49,7 +49,7 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
                 blk->width = seq1->length - start_seq1;
             }
 
-            int start_seq2 = j_idx * BLOCK_HEIGHT;
+            int start_seq2 = i_idx * BLOCK_HEIGHT;
             if (start_seq2 + BLOCK_HEIGHT <= seq2->length)
             {
                 blk->height = BLOCK_HEIGHT;
@@ -346,7 +346,7 @@ MatrixBlock *get_TracebackStartingBlock(BlockMap *map)
 void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2)
 {
     msg->block = *block;
-    memcpy(msg->seq1, seq1->data + block->i * BLOCK_WIDTH, block->width * sizeof(char));
-    memcpy(msg->seq2, seq2->data + block->j * BLOCK_HEIGHT, block->height * sizeof(char));
+    memcpy(msg->seq1, seq1->data + block->j * BLOCK_WIDTH, block->width);
+    memcpy(msg->seq2, seq2->data + block->i * BLOCK_HEIGHT, block->height);
 }
 
