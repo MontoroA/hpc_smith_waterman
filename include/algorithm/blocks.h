@@ -18,6 +18,7 @@ typedef struct
     int i;
     int j;
     bool is_unlocked;
+    bool is_queued;
     // el master debe saber hasta donde va la fila y la columna para pasarselo al slave
     int width;
     int height;

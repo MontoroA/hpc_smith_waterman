@@ -1,17 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "utils/cli.h"
 #include "utils/reports.h"
 
-int read_mode(int argc, char **argv)
+int read_mode(int argc, char **argv, bool load_checkpoint)
 {
-    if (argc < 2)
+    int cant = argc - 2;
+    if (load_checkpoint)
+    {
+        cant = cant - 1; // Ajustar la cantidad de parámetros si se está cargando desde un checkpoint
+    }
+    if (cant < 0)
     {
         fprintf(stderr, "Modo no especificado.\n");
         return MODE_INVALID;
     }
-    int cant = argc - 2;
+
     // char** params = argv + 2;
     int mode = atoi(argv[1]);
 
