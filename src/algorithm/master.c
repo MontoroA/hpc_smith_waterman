@@ -168,7 +168,7 @@ void completion()
 {
     while (true)
     {
-        auto_save_checkpoint(wavefront_number, checkpoint, map);
+        auto_save_checkpoint(&wavefront_number, checkpoint, map);
 
         receive_BlockResult(result_msg, &status);
         cnxt_pid = status.MPI_SOURCE;

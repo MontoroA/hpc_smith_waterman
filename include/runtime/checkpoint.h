@@ -1,4 +1,4 @@
-#include "blocks.h"
+#include "../algorithm/blocks.h"
 #include <stdio.h>
 
 typedef struct

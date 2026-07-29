@@ -1,4 +1,4 @@
-#include "checkpoint.h"
+#include "../../include/runtime/checkpoint.h"
 
 FILE *create_checkpoint_file(const char *filename)
 {
