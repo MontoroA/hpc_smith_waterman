@@ -7,12 +7,8 @@
 #define TAG_BLOCK_PARAM 0
 #define TAG_BLOCK_RESULT 1
 #define TAG_TERMINATE 2
-#define TAG_TRACEBACK_FIRST_RUN 3
-#define TAG_TRACEBACK_RUN 4
-#define TAG_TRACEBACK_NEIGHBOUR 5
-#define TAG_TRACEBACK_RESULT 6
-#define TAG_TRACEBACK_NEIGHBOUR_READY 7
-
+#define TAG_TRACEBACK_RUN 3
+#define TAG_TRACEBACK_RESULT 4
 
 void send_BlockParam(BlockParam *msg, int dest, int tag);
 void receive_BlockResult(BlockResult *msg, MPI_Status *status);

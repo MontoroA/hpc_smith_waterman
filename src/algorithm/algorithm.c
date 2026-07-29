@@ -49,16 +49,21 @@ void print_matrix(int *matrix, CharArray *sequence1, CharArray *sequence2)
     int row_size = BLOCK_WIDTH + 1;
 
     printf("       ");
-    for(int j = 0; j < cols; j++){
-        if(j == 0) printf("       ");
-        else printf("%6c ", sequence1->data[j-1]);
+    for (int j = 0; j < cols; j++)
+    {
+        if (j == 0)
+            printf("       ");
+        else
+            printf("%6c ", sequence1->data[j - 1]);
     }
     printf("\n");
 
     for (int i = 0; i < rows; i++)
     {
-        if(i == 0) printf("       ");
-        else printf("%6c ", sequence2->data[i-1]);
+        if (i == 0)
+            printf("       ");
+        else
+            printf("%6c ", sequence2->data[i - 1]);
 
         for (int j = 0; j < cols; j++)
         {
@@ -80,7 +85,7 @@ void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, Cha
     int j;
     int max_i = 0, max_j = 0, max_score = 0;
 
-    for (i = 0; i < nro_cols; i++) 
+    for (i = 0; i < nro_cols; i++)
     {
         for (j = 0; j < nro_rows; j++) //
         {
@@ -101,40 +106,44 @@ void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, Cha
     // print_matrix(matrix, sequence1, sequence2);
 }
 
-Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int *matrix, MatrixCell *starting_cell, char *seq1, char *seq2)
+Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int *matrix, MatrixCell *cell, int *traceback_length, char *seq1, char *seq2)
 {
-    int i = starting_cell->i;
-    int j = starting_cell->j;
-    int current_score = starting_cell->max_score;
+    int i = cell->i;
+    int j = cell->j;
+    int current_score = cell->max_score;
+    int k = 0;
 
     while (j > 0 && i > 0)
     {
         Direction dir = reverse_max_val(matrix, i, j, seq1, seq2);
         if (dir == DIAG)
         {
-            matched_seq1[j - 1] = seq1[j - 1];
-            matched_seq2[i - 1] = seq2[i - 1];
+            matched_seq1[k] = seq1[j - 1];
+            matched_seq2[k] = seq2[i - 1];
             i--;
             j--;
         }
         else if (dir == UP)
         {
-            matched_seq1[j] = '_';
-            matched_seq2[i - 1] = seq2[i - 1];
+            matched_seq1[k] = '_';
+            matched_seq2[k] = seq2[i - 1];
             i--;
         }
         else
         {
-            matched_seq1[j - 1] = seq1[j - 1];
-            matched_seq2[i] = '_';
+            matched_seq1[k] = seq1[j - 1];
+            matched_seq2[k] = '_';
             j--;
         }
+
+        k++;
         current_score = matrix[i * BLOCK_WIDTH + j];
     }
 
-    starting_cell->i = i;
-    starting_cell->j = j;
-    starting_cell->max_score = current_score;
+    cell->i = i;
+    cell->j = j;
+    cell->max_score = current_score;
+    *traceback_length = k;
 
     if (i == 0 && j == 0)
     {

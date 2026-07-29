@@ -3,3 +3,4 @@ data/medium/*
 data/large/*
 build/*
 .vscode/*
+data/temp/*
