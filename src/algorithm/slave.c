@@ -16,6 +16,11 @@ void slave()
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
     int *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
+    if(matrix == NULL){
+        // TODO precisa una mejor solucion
+        logging(rank, "failed to allocate matrix block\n");
+        exit(EXIT_FAILURE);
+    }
     MatrixCell *cell = malloc(sizeof(MatrixCell));
 
     MPI_Status status;
@@ -30,10 +35,8 @@ void slave()
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
     int traceback_length = 0;
 
-    logging(rank, "ready to work");
     while (true)
     {
-        logging(rank, "waiting for data");
         receive_BlockParam(param_msg, &status);
 
         if (status.MPI_TAG == TAG_TERMINATE)

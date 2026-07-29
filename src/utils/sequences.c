@@ -12,14 +12,23 @@
 #include "utils/sequences.h"
 #include "utils/reports.h"
 
+#define min(a,b) (((a)<(b)) ? (a) : (b))
+
 #define BUFFER_SIZE 8192
 
 static char* path = "data"; 
 static char* path_small = "data/small/"; 
 static char* path_medium = "data/medium/"; 
 static char* path_large = "data/large/"; 
+// static char* path_test = "data/test/"; 
+// static char* path_temp = "data/temp/"; 
 static char* default_seq1 = "data/small/default_seq1";
 static char* default_seq2 = "data/small/default_seq2";
+
+
+// SequenceBuffer* sequence1_buffer = NULL;
+// SequenceBuffer* sequence2_buffer = NULL;
+
 
 char* decide_folder_based_on_size(int length) {
     if (length < 1000) 
@@ -29,7 +38,7 @@ char* decide_folder_based_on_size(int length) {
     return path_large;
 }
 
-CharArray* load_sequence_in_folders(const char* filename){
+SequenceBuffer* load_Sequence(const char* filename, const uint32_t start){
     FILE *filePointer;
     filePointer = fopen(filename, "rb");
 
@@ -41,47 +50,34 @@ CharArray* load_sequence_in_folders(const char* filename){
 
     fseek(filePointer, 0, SEEK_END);
     long length = ftell(filePointer);
-    fseek(filePointer, 0, SEEK_SET);
+    uint32_t read_length = min((uint32_t)length, MAX_BUFFER_SIZE);
+    fseek(filePointer, start, SEEK_SET);
 
     CharArray* seq = malloc(sizeof(CharArray));
-    seq->data = malloc(length + 1);
-    int read = fread(seq->data, 1, length, filePointer);
-    if(read != length){
-        logging(0, "Error reading file: expected %ld bytes, read %d bytes\n", length, read);
+    seq->data = malloc(read_length);
+    seq->length = read_length;
+    uint32_t read = fread(seq->data, 1, read_length, filePointer);
+    if(read != read_length){
+        logging(0, "Error reading file: expected %ld bytes, read %d bytes\n", read_length, read);
         free(seq->data);
         free(seq);
         fclose(filePointer);
         return NULL;
     }
-    seq->data[length] = '\0';
-    seq->length = length;
-
+    // seq->data[read_length] = '\0';
+    seq->length = read_length;
     fclose(filePointer);
-    return seq;
+
+    SequenceBuffer* buffer = malloc(sizeof(SequenceBuffer));
+    buffer->data = seq;
+    buffer->start = 0;
+    buffer->total_length = length;
+
+    return buffer;
 }
 
-// ojo: tienen largo 1 de mas
-// TODO resolver el NULL al final. Va?
-CharArray* generate_sequence(int exp) {
-    srand(time(NULL));
-    char bases[] = {'A', 'C', 'G', 'T'};
-    unsigned int size = pow(10, exp);
-    char* result = malloc(sizeof(char) * (size + 1));
-    for(unsigned int i = 0; i < size; i++) {
-        result[i] = bases[rand() % 4];
-    }
-    result[size] = '\0';
-    for(unsigned int i = 0; i < size; i++) {
-        logging(0, "%c", result[i]);
-    }
-    logging(0, "\n");
-    CharArray* seq = malloc(sizeof(CharArray));
-    seq->data = result;
-    seq->length = size;
-    return seq;
-}
 
-int count_files(const char *path) {
+uint32_t count_files(const char *path) {
     DIR *dir = opendir(path);
     if (dir == NULL) {
         perror(path);
@@ -105,23 +101,79 @@ int count_files(const char *path) {
     }
 
     closedir(dir);
-    return count;
+    return (uint32_t)count;
 }
 
-int save_sequence(const char* folder, CharArray* seq) {
-    char filename[PATH_MAX];
-    int file_count = count_files(folder);
-
-    snprintf(filename, sizeof(filename), "%s/%d", folder, file_count + 1);
-    FILE *filePointer = fopen(filename, "wb");
-    if(filePointer == NULL){
-        logging(0, "Could not open file for writing: %s\n", filename);
-        return -1;
+char* save_sequence(const char* folder, CharArray* seq, const char* name) {
+    char path[PATH_MAX];
+    char* newName = NULL;
+    if(name != NULL){
+        snprintf(path, sizeof(path), "%s/%s", folder, name);
+        newName = (char*)malloc(strlen(name) + 1);
+        strcpy(newName, name);
+    } else{
+        uint32_t file_count = count_files(folder);
+        snprintf(path, sizeof(path), "%s/%d", folder, file_count + 1);
+        newName = (char*)malloc(4);
+        snprintf(newName, 4, "%d", file_count + 1);
     }
+
+    FILE *filePointer = fopen(path, "ab");
+    if(filePointer == NULL){
+        logging(0, "Could not open file for writing: %s\n", path);
+        free(newName);
+        return NULL;
+    }
+
+
     int written = fwrite(seq->data, 1, seq->length, filePointer);
     fclose(filePointer);
+    
     if(written != seq->length){
-        return -1;
+        free(newName);
+        free(seq->data);
+        free(seq);
+        return NULL;
+    }
+
+    return newName;
+}
+
+// ojo: tienen largo 1 de mas
+// TODO resolver el NULL al final. Va?
+int generate_and_save_sequence(int exp) {
+    srand(time(NULL));
+    char bases[] = {'A', 'C', 'G', 'T'};
+    uint32_t total_size = pow(10, exp);
+    uint32_t size = min(total_size, MAX_BUFFER_SIZE);
+    
+    char* folder = decide_folder_based_on_size(total_size);
+    uint32_t saved_size = 0;
+    char* name = NULL;
+    while(saved_size < total_size){
+        uint32_t chunk_size = min(size, total_size - saved_size);
+        char* chunk = malloc((chunk_size + 1));
+        
+        for(unsigned int i = 0; i < chunk_size; i++) {
+            chunk[i] = bases[rand() % 4];
+            // printf("%c", chunk[i]);
+        }
+        printf("\n");
+        chunk[chunk_size] = '\0';
+        
+        CharArray* seq = malloc(sizeof(CharArray));
+        seq->data = chunk;
+        seq->length = chunk_size;
+
+        name = save_sequence(folder, seq, name);
+        printf("Saved bytes %d to %d of %d in %s%s\n", saved_size, saved_size + chunk_size, total_size, folder, name);
+        free(chunk);
+        free(seq);
+        if(name == NULL){
+            logging(0, "Error saving sequence\n");
+            return -1;
+        }
+        saved_size += chunk_size;
     }
     return 0;
 }
@@ -182,19 +234,21 @@ int print_sequence(const char *filepath) {
 
 /*
     Precondiciones:
-        - mode debe ser un valor válido (1-7)
+        - mode debe ser un valor válido (1-5)
         - params debe contener los argumentos necesarios para el modo seleccionado
-    Estas condiciones si cumplen si previamente se llamo a io.c::read_mode(args, argv), 
+    Estas condiciones si cumplen si previamente se llamo a cli.c::read_mode(args, argv), 
     que verifica que el modo sea válido y que la cantidad de argumentos sea correcta.
 */
-CharArray** execute_mode(int mode, char** params){
-    CharArray** seqs = NULL;
+SequenceBuffer** execute_mode(int mode, char** params){
+    SequenceBuffer** seqs = NULL;
     int err = 0;
+
     switch(mode){
+
         case MODE_DEFAULT:
-            seqs = malloc(2*sizeof(CharArray*));
-            seqs[0] = load_sequence_in_folders(default_seq1);
-            seqs[1] = load_sequence_in_folders(default_seq2);
+            seqs = malloc(2*sizeof(SequenceBuffer*));
+            seqs[0] = load_Sequence(default_seq1, 0);
+            seqs[1] = load_Sequence(default_seq2, 0);
             if (seqs[0] == NULL || seqs[1] == NULL) {
                 free(seqs[0]);
                 free(seqs[1]);
@@ -204,38 +258,21 @@ CharArray** execute_mode(int mode, char** params){
             break;
             
         case MODE_FROM_FILES:
-            seqs = malloc(2*sizeof(CharArray*));
-            seqs[0] = load_sequence_in_folders(params[0]);
-            seqs[1] = load_sequence_in_folders(params[1]);
+            seqs = malloc(2*sizeof(SequenceBuffer*));
+            seqs[0] = load_Sequence(params[0], 0);
+            printf("Sequence1: %s\n", params[0]);
+            seqs[1] = load_Sequence(params[1], 0);
             if (seqs[0] == NULL || seqs[1] == NULL) {
                 free(seqs[0]);
                 free(seqs[1]);
                 free(seqs);
-                return NULL;
+                err = 1;
             }
-            break;
-            
-        case MODE_FROM_STRINGS:
-            seqs = malloc(2*sizeof(CharArray*));
-            CharArray* seq1 = malloc(sizeof(CharArray));
-            CharArray* seq2 = malloc(sizeof(CharArray));
-            seq1->length = strlen(params[0]);
-            seq2->length = strlen(params[1]);
-            seq1->data = malloc(seq1->length + 1);
-            seq2->data = malloc(seq2->length + 1);
-            strcpy(seq1->data, params[0]);
-            strcpy(seq2->data, params[1]);
-            seq1->data[seq1->length] = '\0';
-            seq2->data[seq2->length] = '\0';
-            seqs[0] = seq1;
-            seqs[1] = seq2;
             break;
             
         case MODE_GENERATE_RANDOM:
             int exponent = atoi(params[0]);
-            CharArray* generated_seq = generate_sequence(exponent);
-            char* folder =  decide_folder_based_on_size(generated_seq->length);
-            err = save_sequence(folder, generated_seq);
+            err = generate_and_save_sequence(exponent);
             break;
             
         case MODE_LIST_SEQUENCES:
@@ -256,11 +293,8 @@ CharArray** execute_mode(int mode, char** params){
                 logging(0, "Error printing sequence from %s\n", print_path);
             }
             break;
-
-        case MODE_DELETE_SEQUENCE:
-            // char *delete_path = params[0];
-            logging(0, "Delete sequence mode is not implemented yet.\n");
-            break;
+        default:
+            err = 1;
     }
     if(err != 0){
         logging(0, "Error ejecutando modo: no se pudieron cargar las secuencias\n");
@@ -268,4 +302,29 @@ CharArray** execute_mode(int mode, char** params){
         return NULL;
     }
     return seqs;
+}
+
+bool buffer_contains(SequenceBuffer* buffer, uint32_t start, uint32_t length){
+    if(buffer == NULL){
+        return false;
+    }
+    if(start < buffer->start){
+        return false;
+    }
+    if((start + length) > (buffer->start + buffer->data->length)){
+        return false;
+    }
+    return true;
+}
+
+void free_SequenceBuffer(SequenceBuffer* buffer){
+    if(buffer == NULL){
+        return;
+    }
+    if(buffer->data != NULL){
+        free(buffer->data->data);
+        free(buffer->data);
+    }
+    free(buffer->path);
+    free(buffer);
 }

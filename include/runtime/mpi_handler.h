@@ -1,10 +1,13 @@
 #ifndef MPI_HANDLER_H
 #define MPI_HANDLER_H
 
+#include "collections/arrays.h"
+#include "utils/reports.h"
+
 #define MASTER_RANK 0
 #define OTHERS_RANK 1
 
-int run_master(int argc, char **argv);
+SWAReport* run_master(CharArray* seq1, CharArray* seq2);
 int run_worker();
 
 #endif

@@ -13,48 +13,15 @@
 #include "algorithm/slave.h"
 #include "algorithm/master.h"
 
-bool resume(int argc, char **argv)
+SWAReport *run_master(CharArray *seq1, CharArray *seq2, bool load_checkpoint)
 {
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "--resume") == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-int run_master(int argc, char **argv)
-{
-    bool load_checkpoint = resume(argc, argv);
-    int mode = read_mode(argc, argv, load_checkpoint);
-    if (mode == MODE_INVALID)
-    {
-        logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
-        return EXIT_FAILURE;
-    }
-
-    char **params = argv + 2;
-    CharArray **seqs = execute_mode(mode, params);
-    if (seqs != NULL)
-    {
-        double start = MPI_Wtime();
-        CharArray *seq1 = seqs[0];
-        CharArray *seq2 = seqs[1];
-        master(seq1, seq2, load_checkpoint);
-
-        free(seq1->data);
-        free(seq2->data);
-        free(seq1);
-        free(seq2);
-        free(seqs);
-        double end = MPI_Wtime();
-        reports(start, end); // Recibe: tiempos, resultado algoritmo, metadata de ejecucion
-    }
-    terminate_Workers();
-    return EXIT_SUCCESS;
+    SWAReport *report = malloc(sizeof(SWAReport));
+    double start = MPI_Wtime();
+    master(seq1, seq2, load_checkpoint);
+    double end = MPI_Wtime();
+    report->start_time = start;
+    report->end_time = end;
+    return report;
 }
 
 int run_worker()
