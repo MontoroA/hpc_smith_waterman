@@ -13,7 +13,6 @@
 #define BLOCK_HEIGHT 10000
 #define BLOCK_WIDTH 10000
 
-
 typedef struct
 {
     int i;
@@ -54,12 +53,11 @@ typedef struct
 {
     int block_i;
     int block_j;
-    int width;
-    int height;
+    int length;
     MatrixCell next_starting_cell;
     Direction next_block;
-    char matched_seq1[BLOCK_WIDTH];
-    char matched_seq2[BLOCK_HEIGHT];
+    char matched_seq1[BLOCK_WIDTH + BLOCK_HEIGHT];
+    char matched_seq2[BLOCK_WIDTH + BLOCK_HEIGHT];
 } TracebackResult;
 
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2);
@@ -68,7 +66,7 @@ MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map);
 
 void print_blockMap(BlockMap *map);
 
-void update_BlockMap(MatrixBlock block, BlockMap *map);
+void update_BlockMap(BlockResult *result_msg, BlockMap *map);
 
 // MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
 
@@ -76,7 +74,7 @@ BlockParam *create_blockParam();
 
 TracebackResult *create_tracebackResult();
 
-void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2);
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, int traceback_length, char *matched_seq1, char *matched_seq2);
 
 void free_TracebackResult(TracebackResult *msg);
 
