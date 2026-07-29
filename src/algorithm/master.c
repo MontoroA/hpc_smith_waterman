@@ -128,7 +128,12 @@ void init()
 {
     logging(MASTER_RANK, "initialized\n");
     map = create_Map(seq1, seq2);
-    queue = createQueue(max(seq1->length, seq2->length));
+    queue = createQueue(map->width * map->height);
+    if (queue == NULL)
+    {
+        logging(MASTER_RANK, "failed to allocate work queue\n");
+        exit(EXIT_FAILURE);
+    }
     result_msg = create_blockResult();
     param_msg = create_blockParam();
     block = get_MatrixBlock(0, 0, map);

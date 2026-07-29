@@ -35,16 +35,6 @@ int read_mode(int argc, char **argv)
         // char *file2 = params[1];
         break;
 
-    case MODE_FROM_STRINGS:
-        if (cant != 2)
-        {
-            fprintf(stderr, "Modo 3 requiere: <seq1> <seq2>\n");
-            return MODE_INVALID;
-        }
-        // char *seq1 = params[0];
-        // char *seq2 = params[1];
-        break;
-
     case MODE_GENERATE_RANDOM:
         if (cant != 1)
         {
@@ -79,25 +69,14 @@ int read_mode(int argc, char **argv)
         // char *print_path = params[0];
         break;
 
-    case MODE_DELETE_SEQUENCE:
-        if (cant != 1)
-        {
-            fprintf(stderr, "Modo 7 requiere: <path>\n");
-            return MODE_INVALID;
-        }
-        // char *delete_path = params[0];
-        break;
-
     default:
         logging(0, "Modo invalido: %d\n", mode);
         logging(0, "Modos validos:\n");
         logging(0, "1: Cargar secuencias por defecto. No recibe parametros.\n");
         logging(0, "2: Cargar secuencias desde archivos. Recibe dos parametros: <archivo1> <archivo2>\n");
-        logging(0, "3: Cargar secuencias desde cadenas de caracteres. Recibe dos parametros: <seq1> <seq2>\n");
-        logging(0, "4: Generar secuencia aleatoria. Recibe un parametro: <exponente>\n");
-        logging(0, "5: Listar secuencias en un directorio. Recibe cero o un parametro: [<subdirectorio>]\n");
-        logging(0, "6: Imprimir secuencia desde un archivo. Recibe un parametro: <path>\n");
-        logging(0, "7: Eliminar secuencia desde un archivo. Recibe un parametro: <path>\n");
+        logging(0, "3: Generar secuencia aleatoria. Recibe un parametro: <exponente>\n");
+        logging(0, "4: Listar secuencias en un directorio. Recibe cero o un parametro: [<subdirectorio>]\n");
+        logging(0, "5: Imprimir secuencia desde un archivo. Recibe un parametro: <path>\n");
         return MODE_INVALID;
     }
 

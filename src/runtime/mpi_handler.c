@@ -13,35 +13,16 @@
 #include "algorithm/master.h"
 
 
-int run_master(int argc, char **argv)
-{
-    int mode = read_mode(argc, argv);
-    if (mode == MODE_INVALID)
-    {
-        logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
-        return EXIT_FAILURE;
-    }
-    
-    char **params = argv + 2;
-    CharArray **seqs = execute_mode(mode, params);
-    if (seqs != NULL)
-    {
-        double start = MPI_Wtime();
-        CharArray *seq1 = seqs[0];
-        CharArray *seq2 = seqs[1];
-    
-        master(seq1, seq2);
 
-        free(seq1->data);
-        free(seq2->data);
-        free(seq1);
-        free(seq2);
-        free(seqs);
-        double end = MPI_Wtime();
-        reports(start, end); // Recibe: tiempos, resultado algoritmo, metadata de ejecucion
-    }
-    terminate_Workers();
-    return EXIT_SUCCESS;
+SWAReport* run_master(CharArray* seq1, CharArray* seq2)
+{
+    SWAReport* report = malloc(sizeof(SWAReport));
+    double start = MPI_Wtime();
+    master(seq1, seq2);
+    double end = MPI_Wtime();
+    report->start_time = start;
+    report->end_time = end;
+    return report;
 }
 
 int run_worker()
