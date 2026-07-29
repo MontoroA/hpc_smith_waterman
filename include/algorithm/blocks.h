@@ -66,7 +66,7 @@ MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map);
 
 void print_blockMap(BlockMap *map);
 
-void update_BlockMap(MatrixBlock block, BlockMap *map);
+void update_BlockMap(BlockResult *result_msg, BlockMap *map);
 
 // MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
 

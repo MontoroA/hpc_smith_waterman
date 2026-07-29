@@ -106,11 +106,11 @@ void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, Cha
     // print_matrix(matrix, sequence1, sequence2);
 }
 
-Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int *matrix, MatrixCell *starting_cell, int *traceback_length, char *seq1, char *seq2)
+Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int *matrix, MatrixCell *cell, int *traceback_length, char *seq1, char *seq2)
 {
-    int i = starting_cell->i;
-    int j = starting_cell->j;
-    int current_score = starting_cell->max_score;
+    int i = cell->i;
+    int j = cell->j;
+    int current_score = cell->max_score;
     int k = 0;
 
     while (j > 0 && i > 0)
@@ -140,9 +140,9 @@ Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int 
         current_score = matrix[i * BLOCK_WIDTH + j];
     }
 
-    starting_cell->i = i;
-    starting_cell->j = j;
-    starting_cell->max_score = current_score;
+    cell->i = i;
+    cell->j = j;
+    cell->max_score = current_score;
     *traceback_length = k;
 
     if (i == 0 && j == 0)

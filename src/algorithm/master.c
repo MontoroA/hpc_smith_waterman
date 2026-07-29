@@ -133,7 +133,10 @@ void init()
     param_msg = create_blockParam();
     block = get_MatrixBlock(0, 0, map);
     load_dependencies(block, map);
-    max_score_block = block;
+    max_score_block = malloc(sizeof(MatrixBlock));
+    max_score_block->i = 0;
+    max_score_block->j = 0;
+    max_score_block->max_cell.max_score = 0;
     load_BlockParam(param_msg, block, seq1, seq2);
 
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
@@ -160,10 +163,13 @@ void completion()
         {
             if (result_msg->result.max_score > max_score_block->max_cell.max_score)
             {
-                // TODO esta memoria se sobreescribe, hay que copiarla
-                max_score_block = &result_msg->block;
+                max_score_block->i = result_msg->block.i;
+                max_score_block->j = result_msg->block.j;
+                max_score_block->max_cell.i = result_msg->result.i;
+                max_score_block->max_cell.j = result_msg->result.j;
+                max_score_block->max_cell.max_score = result_msg->result.max_score;
             }
-            update_BlockMap(result_msg->block, map);
+            update_BlockMap(result_msg, map);
             enqueue_ready_blocks(queue, map, &result_msg->block);
 
             proc_available[cnxt_pid] = true;
@@ -195,7 +201,7 @@ void completion()
 void traceback()
 {
     traceback_msg = create_tracebackResult();
-    block = max_score_block;
+    block = get_MatrixBlock(max_score_block->i, max_score_block->j, map);
 
     load_BlockParam(param_msg, block, seq1, seq2);
     send_BlockParam(param_msg, 1, TAG_TRACEBACK_RUN);
@@ -254,8 +260,8 @@ void master(CharArray *sequence1, CharArray *sequence2)
         MPI_Send(NULL, 0, MPI_BYTE, i, TAG_TERMINATE, MPI_COMM_WORLD);
     }
 
-    save_list(matched_seq1, "matched_seq1.txt");
-    save_list(matched_seq2, "matched_seq2.txt");
+    save_list(matched_seq1, "./data/temp/matched_seq1.txt");
+    save_list(matched_seq2, "./data/temp/matched_seq2.txt");
 
     free(map);
     free(proc_available);

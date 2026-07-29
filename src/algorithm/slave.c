@@ -16,7 +16,7 @@ void slave()
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
     int *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
-    MatrixCell *max_cell = malloc(sizeof(MatrixCell));
+    MatrixCell *cell = malloc(sizeof(MatrixCell));
 
     MPI_Status status;
 
@@ -28,8 +28,7 @@ void slave()
     char *matched_seq2 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
     Direction next_block = 0;
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
-    MatrixCell *starting_cell = malloc(sizeof(MatrixCell));
-    int traceback_length = -1;
+    int traceback_length = 0;
 
     logging(rank, "ready to work");
     while (true)
@@ -50,11 +49,11 @@ void slave()
 
         logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
         load_block(matrix, &param_msg->block);
-        complete_block(matrix, max_cell, seq1, seq2);
+        complete_block(matrix, cell, seq1, seq2);
 
         if (status.MPI_TAG == TAG_BLOCK_PARAM)
         {
-            load_blockResult(result_msg, matrix, max_cell, param_msg);
+            load_blockResult(result_msg, matrix, cell, param_msg);
             logging(rank, "sending result for block (%d, %d) with max score %d ", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
             send_BlockResult(result_msg);
         }
@@ -62,11 +61,13 @@ void slave()
         if (status.MPI_TAG == TAG_TRACEBACK_RUN)
         {
             // es la celda por la que debemos arrancar el traceback en este bloque
-            starting_cell = &param_msg->block.max_cell;
-            next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, &traceback_length, seq1->data, seq2->data);
+            cell->i = param_msg->block.max_cell.i;
+            cell->j = param_msg->block.max_cell.j;
+            cell->max_score = param_msg->block.max_cell.max_score;
 
-            load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, traceback_length, matched_seq1, matched_seq2);
+            next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, cell, &traceback_length, seq1->data, seq2->data);
 
+            load_tracebackResult(traceback_msg, cell, next_block, param_msg, traceback_length, matched_seq1, matched_seq2);
             logging(rank, " sending traceback result for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
             send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
         }
@@ -76,7 +77,7 @@ void slave()
     free_BlockResult(result_msg);
     free_TracebackResult(traceback_msg);
     free_block(matrix);
-    free(max_cell);
+    free(cell);
     free(seq1);
     free(seq2);
     free(matched_seq1);

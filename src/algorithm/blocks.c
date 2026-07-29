@@ -78,23 +78,25 @@ void print_blockMap(BlockMap *map)
     printf("\n");
 }
 
-void update_BlockMap(MatrixBlock block, BlockMap *map)
+void update_BlockMap(BlockResult *result_msg, BlockMap *map)
 {
-    int i = block.i;
-    int j = block.j;
+    int i = result_msg->block.i;
+    int j = result_msg->block.j;
     MatrixBlock *updated_block = get_MatrixBlock(i, j, map);
 
     updated_block->is_unlocked = true;
     for (int idx = 0; idx < updated_block->width; idx++)
     {
-        updated_block->row[idx] = block.row[idx];
+        updated_block->row[idx] = result_msg->block.row[idx];
     }
     for (int idx = 0; idx < updated_block->height; idx++)
     {
-        updated_block->col[idx] = block.col[idx];
+        updated_block->col[idx] = result_msg->block.col[idx];
     }
-    updated_block->diag = block.diag;
-    updated_block->max_cell = block.max_cell;
+    updated_block->diag = result_msg->block.diag;
+    updated_block->max_cell.i = result_msg->result.i;
+    updated_block->max_cell.j = result_msg->result.j;
+    updated_block->max_cell.max_score = result_msg->result.max_score;
 }
 
 bool block_is_ready(MatrixBlock *block, BlockMap *map)
