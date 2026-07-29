@@ -35,12 +35,8 @@ void slave()
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
     MatrixCell *starting_cell = malloc(sizeof(MatrixCell));
 
-    logging(rank, "result of mallocs: %p, %p, %p, %p, %p, %p, %p, %p", param_msg, result_msg, matrix, max_cell, seq1, seq2, matched_seq1, matched_seq2);
-
-    logging(rank, "ready to work");
     while (true)
     {
-        logging(rank, "waiting for data");
         receive_BlockParam(param_msg, &status);
 
         if (status.MPI_TAG == TAG_TERMINATE)

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
@@ -54,9 +55,14 @@ void logging_wo_header(const char *fmt, ...)
     va_end(args);
 }
 
-int reports(double start, double end)
+void reports(SWAReport* report)
 {
-    double tiempo = end - start;
+    //TODO: implementar primitiva en messages para recibir reportes de los workers
+    double tiempo = report->end_time - report->start_time;
     printf("Tiempo de ejecución: %f segundos\n", tiempo);
-    return 0;
+}
+
+void free_Reports(SWAReport* report)
+{
+    free(report);
 }

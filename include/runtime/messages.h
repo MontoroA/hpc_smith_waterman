@@ -1,8 +1,8 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-#include "runtime/mpi_handler.h"
 #include "algorithm/blocks.h"
+// #include "runtime/mpi_handler.h"
 
 #define TAG_BLOCK_PARAM 0
 #define TAG_BLOCK_RESULT 1
