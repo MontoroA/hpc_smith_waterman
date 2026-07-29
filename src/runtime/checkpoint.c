@@ -25,6 +25,20 @@ FILE *create_checkpoint_file(const char *filename)
         return NULL;
     }
 
+    logging(MASTER_RANK, "Created checkpoint file: %s\n", filename);
+    return file;
+}
+
+FILE *open_checkpoint_file(const char *filename)
+{
+    FILE *file = fopen(filename, "rb+");
+    if (!file)
+    {
+        perror("Failed to open checkpoint file");
+        return NULL;
+    }
+
+    logging(MASTER_RANK, "Opened checkpoint file: %s\n", filename);
     return file;
 }
 
@@ -66,24 +80,26 @@ int save_wavefront_to_checkpoint(FILE *file, int wavefront_number, BlockMap *map
         perror("fwrite");
         return -1;
     }
+
+    logging(MASTER_RANK, "Saved wavefront %d to checkpoint\n", wavefront_number);
     return 0;
 }
 
-void load_from_checkpoint(const char *filename, BlockMap *map)
+int load_from_checkpoint(FILE *file, BlockMap *map)
 {
-    FILE *file = fopen(filename, "rb");
+    logging(MASTER_RANK, "Loading from checkpoint...\n");
 
     if (fseek(file, 0, SEEK_SET) != 0)
     {
         perror("fseek");
-        return;
+        return -1;
     }
 
     CheckpointHeader header;
     if (fread(&header, sizeof(CheckpointHeader), 1, file) != 1)
     {
         perror("fread");
-        return;
+        return -1;
     }
 
     int last_wavefront_computed = header.last_wavefront_computed;
@@ -101,17 +117,21 @@ void load_from_checkpoint(const char *filename, BlockMap *map)
                 if (fseek(file, offset, SEEK_SET) != 0)
                 {
                     perror("fseek");
-                    return;
+                    return -1;
                 }
 
                 if (fread(block, sizeof(MatrixBlock), 1, file) != 1)
                 {
                     perror("fread");
-                    return;
+                    return -1;
                 }
+                block->is_unlocked = true;
+                logging(MASTER_RANK, "Loaded block (%d, %d) from checkpoint\n", i, j);
             }
         }
     }
+    logging(MASTER_RANK, "Loaded from checkpoint: last_wavefront_computed = %d\n", last_wavefront_computed); // TODO checkear que dice que retomo de la penultima y no de la ultima raro
+    return last_wavefront_computed;
 }
 
 void auto_save_checkpoint(int *next_wavefront_number, FILE *fp, BlockMap *map)
@@ -131,6 +151,6 @@ void auto_save_checkpoint(int *next_wavefront_number, FILE *fp, BlockMap *map)
     int res = save_wavefront_to_checkpoint(fp, *next_wavefront_number, map);
     if (res != -1)
     {
-        *next_wavefront_number += 2;
+        *next_wavefront_number += CHECKPOINT_INTERVAL;
     }
 }

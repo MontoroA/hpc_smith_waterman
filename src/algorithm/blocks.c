@@ -37,6 +37,7 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
             blk->i = i_idx;
             blk->j = j_idx;
             blk->is_unlocked = false;
+            blk->is_queued = false;
 
             int start_seq1 = j_idx * BLOCK_WIDTH;
             if (start_seq1 + BLOCK_WIDTH <= seq1->length)

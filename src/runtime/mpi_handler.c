@@ -8,13 +8,28 @@
 #include "utils/sequences.h"
 #include "runtime/messages.h"
 #include "utils/reports.h"
-
+#include <stdbool.h>
+#include <string.h>
 #include "algorithm/slave.h"
 #include "algorithm/master.h"
 
+bool resume(int argc, char **argv)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "--resume") == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int run_master(int argc, char **argv)
 {
-    int mode = read_mode(argc, argv);
+    bool load_checkpoint = resume(argc, argv);
+    int mode = read_mode(argc, argv, load_checkpoint);
     if (mode == MODE_INVALID)
     {
         logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
@@ -28,8 +43,6 @@ int run_master(int argc, char **argv)
         double start = MPI_Wtime();
         CharArray *seq1 = seqs[0];
         CharArray *seq2 = seqs[1];
-        bool load_checkpoint = false; // TODO add cli option to load checkpoint from start
-
         master(seq1, seq2, load_checkpoint);
 
         free(seq1->data);

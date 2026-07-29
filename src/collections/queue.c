@@ -2,19 +2,22 @@
 
 #include "collections/queue.h"
 
-Queue* createQueue(int size)    
+Queue *createQueue(int size)
 {
-    if (size <= 0) {
+    if (size <= 0)
+    {
         return NULL;
     }
 
-    Queue *q = (Queue*) malloc(sizeof(Queue));
-    if (!q) {
+    Queue *q = (Queue *)malloc(sizeof(Queue));
+    if (!q)
+    {
         return NULL;
     }
 
-    q->items = (MatrixBlock *)malloc(size * sizeof(MatrixBlock));
-    if (!q->items) {
+    q->items = (MatrixBlock **)malloc(size * sizeof(MatrixBlock));
+    if (!q->items)
+    {
         free(q);
         return NULL;
     }
@@ -23,8 +26,6 @@ Queue* createQueue(int size)
     q->size = size;
     return q;
 }
-
-
 
 bool isEmpty(Queue *q)
 {
@@ -36,40 +37,48 @@ bool isFull(Queue *q)
     return (((q->rear + 1) % q->size) == q->front);
 }
 
-
-bool enqueue(Queue *q, MatrixBlock value)
+bool enqueue(Queue *q, MatrixBlock *value)
 {
-    if (isFull(q)) {
+    if (isFull(q))
+    {
         return false;
     }
-    if (isEmpty(q)) {
+    if (isEmpty(q))
+    {
         q->front = 0;
     }
     q->rear = (q->rear + 1) % q->size;
     q->items[q->rear] = value;
+    value->is_queued = true;
     return true;
 }
 
-
-MatrixBlock* dequeue(Queue *q){
-    if (isEmpty(q)) {
-        return (MatrixBlock*)NULL; // Queue is empty
+MatrixBlock *dequeue(Queue *q)
+{
+    if (isEmpty(q))
+    {
+        return (MatrixBlock *)NULL; // Queue is empty
     }
 
-    MatrixBlock* value = &q->items[q->front];
+    MatrixBlock *value = q->items[q->front];
 
-    if (q->front == q->rear) {
+    if (q->front == q->rear)
+    {
         q->front = -1;
         q->rear = -1;
-    } else {
+    }
+    else
+    {
         q->front = (q->front + 1) % q->size;
     }
-
+    value->is_queued = false;
     return value;
 }
 
-void freeQueue(Queue *q) {
-    if (q) {
+void freeQueue(Queue *q)
+{
+    if (q)
+    {
         free(q->items);
         free(q);
     }

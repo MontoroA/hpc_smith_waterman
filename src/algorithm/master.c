@@ -39,10 +39,10 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
     if (i < (height - 1) && j < (width - 1))
     {
         MatrixBlock *diag = get_MatrixBlock(i + 1, j + 1, map);
-        if (block_is_ready(diag, map))
+        if (!diag->is_queued && block_is_ready(diag, map))
         {
             load_dependencies(diag, map);
-            enqueue(queue, *diag);
+            enqueue(queue, diag);
             logging(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
         }
     }
@@ -50,10 +50,10 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
     if (j < (width - 1))
     {
         MatrixBlock *der = get_MatrixBlock(i, j + 1, map);
-        if (block_is_ready(der, map))
+        if (!der->is_queued && block_is_ready(der, map))
         {
             load_dependencies(der, map);
-            enqueue(queue, *der);
+            enqueue(queue, der);
             logging(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
         }
     }
@@ -61,10 +61,10 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
     if (i < (height - 1))
     {
         MatrixBlock *inf = get_MatrixBlock(i + 1, j, map);
-        if (block_is_ready(inf, map))
+        if (!inf->is_queued && block_is_ready(inf, map))
         {
             load_dependencies(inf, map);
-            enqueue(queue, *inf);
+            enqueue(queue, inf);
             logging(MASTER_RANK, "enqueued block (%d, %d)\n", inf->i, inf->j);
         }
     }
@@ -129,27 +129,16 @@ void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
 
 void init(bool load_checkpoint)
 {
-    if (!load_checkpoint)
-    {
-        checkpoint = create_checkpoint_file("./data/temp/checkpoint.bin");
-    }
-    else
-    {
-        load_from_checkpoint("./data/tempt/checkpoint.bin", map);
-    }
-
     logging(MASTER_RANK, "initialized\n");
     map = create_Map(seq1, seq2);
     queue = createQueue(max(seq1->length, seq2->length));
     result_msg = create_blockResult();
     param_msg = create_blockParam();
-    block = get_MatrixBlock(0, 0, map);
-    load_dependencies(block, map);
+
     max_score_block = malloc(sizeof(MatrixBlock));
     max_score_block->i = 0;
     max_score_block->j = 0;
     max_score_block->max_cell.max_score = 0;
-    load_BlockParam(param_msg, block, seq1, seq2);
 
     MPI_Comm_size(MPI_COMM_WORLD, &nro_procs);
     proc_available = malloc(nro_procs * sizeof(bool));
@@ -157,11 +146,58 @@ void init(bool load_checkpoint)
     {
         proc_available[i] = true;
     }
-    cnxt_pid = 1;
-    working_procs = 1;
 
     matched_seq1 = NULL;
     matched_seq2 = NULL;
+
+    logging(MASTER_RANK, "ready for distributing work\n");
+
+    if (!load_checkpoint)
+    {
+        checkpoint = create_checkpoint_file(CHECKPOINT_FILE_PATH);
+        block = get_MatrixBlock(0, 0, map);
+        load_dependencies(block, map);
+
+        load_BlockParam(param_msg, block, seq1, seq2);
+
+        cnxt_pid = 1;
+        working_procs = 1;
+
+        send_BlockParam(param_msg, cnxt_pid, TAG_BLOCK_PARAM);
+    }
+    else
+    {
+        checkpoint = open_checkpoint_file(CHECKPOINT_FILE_PATH);
+        wavefront_number = load_from_checkpoint(checkpoint, map);
+
+        // encolo los bloques que estan para ejecutar
+        for (int i = 0; i < map->height && i <= wavefront_number; i++)
+        {
+            int j = wavefront_number - i;
+            if (j >= 0 && j < map->width)
+            {
+                block = get_MatrixBlock(i, j, map);
+                enqueue_ready_blocks(queue, map, block);
+            }
+        }
+
+        working_procs = 0;
+
+        for (int i = 1; i < nro_procs; i++)
+        {
+            if (proc_available[i])
+            {
+                if (isEmpty(queue))
+                    break;
+                block = dequeue(queue);
+                logging(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
+                load_BlockParam(param_msg, block, seq1, seq2);
+                send_BlockParam(param_msg, i, TAG_BLOCK_PARAM);
+                proc_available[i] = false;
+                working_procs++;
+            }
+        }
+    }
 }
 
 void completion()
@@ -261,9 +297,6 @@ void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
     seq1 = sequence1;
     seq2 = sequence2;
     init(load_checkpoint);
-
-    logging(MASTER_RANK, "ready for distributing work\n");
-    send_BlockParam(param_msg, cnxt_pid, TAG_BLOCK_PARAM);
 
     completion();
 
