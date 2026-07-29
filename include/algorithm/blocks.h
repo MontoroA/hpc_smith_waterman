@@ -56,8 +56,8 @@ typedef struct
     int length;
     MatrixCell next_starting_cell;
     Direction next_block;
-    char matched_seq1[BLOCK_WIDTH];
-    char matched_seq2[BLOCK_HEIGHT];
+    char matched_seq1[BLOCK_WIDTH + BLOCK_HEIGHT];
+    char matched_seq2[BLOCK_WIDTH + BLOCK_HEIGHT];
 } TracebackResult;
 
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2);

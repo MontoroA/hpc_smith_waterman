@@ -24,8 +24,8 @@ void slave()
     CharArray *seq2 = malloc(sizeof(CharArray));
 
     // traceback
-    char *matched_seq1 = calloc(BLOCK_WIDTH, sizeof(char)); // TODO fijarse que una secuencia puede ser mas grance
-    char *matched_seq2 = calloc(BLOCK_HEIGHT, sizeof(char));
+    char *matched_seq1 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
+    char *matched_seq2 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
     Direction next_block = 0;
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
     MatrixCell *starting_cell = malloc(sizeof(MatrixCell));
