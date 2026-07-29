@@ -24,11 +24,12 @@ void slave()
     CharArray *seq2 = malloc(sizeof(CharArray));
 
     // traceback
-    char *matched_seq1 = malloc(BLOCK_WIDTH * sizeof(char));
-    char *matched_seq2 = malloc(BLOCK_HEIGHT * sizeof(char));
+    char *matched_seq1 = calloc(BLOCK_WIDTH, sizeof(char)); // TODO fijarse que una secuencia puede ser mas grance
+    char *matched_seq2 = calloc(BLOCK_HEIGHT, sizeof(char));
     Direction next_block = 0;
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
     MatrixCell *starting_cell = malloc(sizeof(MatrixCell));
+    int traceback_length = -1;
 
     logging(rank, "ready to work");
     while (true)
@@ -47,47 +48,26 @@ void slave()
         seq2->data = param_msg->seq2;
         seq2->length = param_msg->block.height;
 
-        if (status.MPI_TAG != TAG_TRACEBACK_RUN)
+        logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
+        load_block(matrix, &param_msg->block);
+        complete_block(matrix, max_cell, seq1, seq2);
+
+        if (status.MPI_TAG == TAG_BLOCK_PARAM)
         {
-            logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
-            load_block(matrix, &param_msg->block);
-            complete_block(matrix, max_cell, seq1, seq2);
-
-            if (status.MPI_TAG == TAG_BLOCK_PARAM)
-            {
-                load_blockResult(result_msg, matrix, max_cell, param_msg);
-                logging(rank, "sending result for block (%d, %d) with max score %d ", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
-                send_BlockResult(result_msg);
-            }
-
-            if (status.MPI_TAG == TAG_TRACEBACK_NEIGHBOUR)
-            {
-                // aviso al master que este bloque ya se calculo por adelantado
-                logging(rank, " sending traceback neighbour ready for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
-                send_TracebackResult(traceback_msg, TAG_TRACEBACK_NEIGHBOUR_READY);
-            }
-
-            if (status.MPI_TAG == TAG_TRACEBACK_FIRST_RUN)
-            {
-                // es la celda por la que debemos arrancar el traceback en este bloque
-                starting_cell = &param_msg->block.max_cell;
-                next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, seq1->data, seq2->data);
-
-                load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
-
-                logging(rank, " sending traceback result for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
-                send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
-            }
+            load_blockResult(result_msg, matrix, max_cell, param_msg);
+            logging(rank, "sending result for block (%d, %d) with max score %d ", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
+            send_BlockResult(result_msg);
         }
-        else
+
+        if (status.MPI_TAG == TAG_TRACEBACK_RUN)
         {
             // es la celda por la que debemos arrancar el traceback en este bloque
             starting_cell = &param_msg->block.max_cell;
-            next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, seq1->data, seq2->data);
+            next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, starting_cell, &traceback_length, seq1->data, seq2->data);
 
-            load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, matched_seq1, matched_seq2);
+            load_tracebackResult(traceback_msg, starting_cell, next_block, param_msg, traceback_length, matched_seq1, matched_seq2);
 
-            logging(rank, " sending traceback result for block (%d, %d) ", traceback_msg->block_i, traceback_msg->block_j);
+            logging(rank, " sending traceback result for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
             send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
         }
     }

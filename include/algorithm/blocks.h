@@ -13,7 +13,6 @@
 #define BLOCK_HEIGHT 10000
 #define BLOCK_WIDTH 10000
 
-
 typedef struct
 {
     int i;
@@ -54,8 +53,7 @@ typedef struct
 {
     int block_i;
     int block_j;
-    int width;
-    int height;
+    int length;
     MatrixCell next_starting_cell;
     Direction next_block;
     char matched_seq1[BLOCK_WIDTH];
@@ -76,7 +74,7 @@ BlockParam *create_blockParam();
 
 TracebackResult *create_tracebackResult();
 
-void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2);
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, int traceback_length, char *matched_seq1, char *matched_seq2);
 
 void free_TracebackResult(TracebackResult *msg);
 

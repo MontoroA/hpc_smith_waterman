@@ -7,7 +7,6 @@
 #include "collections/arrays.h"
 #include "algorithm/algorithm.h"
 
-
 MatrixBlock *get_BlockMap(int i, int j, BlockMap *map)
 {
     return &map->blocks[i * map->width + j];
@@ -34,7 +33,7 @@ BlockMap *create_Map(CharArray *seq1, CharArray *seq2)
     {
         for (int j_idx = 0; j_idx < width; j_idx++)
         {
-            MatrixBlock* blk = get_BlockMap(i_idx, j_idx, block_map);
+            MatrixBlock *blk = get_BlockMap(i_idx, j_idx, block_map);
             blk->i = i_idx;
             blk->j = j_idx;
             blk->is_unlocked = false;
@@ -86,11 +85,11 @@ void update_BlockMap(MatrixBlock block, BlockMap *map)
     MatrixBlock *updated_block = get_MatrixBlock(i, j, map);
 
     updated_block->is_unlocked = true;
-    for(int idx = 0; idx < updated_block->width; idx++)
+    for (int idx = 0; idx < updated_block->width; idx++)
     {
         updated_block->row[idx] = block.row[idx];
     }
-    for(int idx = 0; idx < updated_block->height; idx++)
+    for (int idx = 0; idx < updated_block->height; idx++)
     {
         updated_block->col[idx] = block.col[idx];
     }
@@ -148,27 +147,28 @@ void load_dependencies(MatrixBlock *block, BlockMap *map)
         MatrixBlock *diag = get_MatrixBlock(i - 1, j - 1, map);
         block->diag = diag->diag;
     }
-    
+
     if (i > 0)
     {
         MatrixBlock *sup = get_MatrixBlock(i - 1, j, map);
-        for(int idx = 0; idx < block->width; idx++)
+        for (int idx = 0; idx < block->width; idx++)
         {
             block->row[idx] = sup->row[idx];
         }
     }
-    else{
+    else
+    {
         block->diag = 0;
-        for(int idx = 0; idx < block->width; idx++)
+        for (int idx = 0; idx < block->width; idx++)
         {
             block->row[idx] = 0;
         }
     }
-    
+
     if (j > 0)
     {
         MatrixBlock *izq = get_MatrixBlock(i, j - 1, map);
-        for(int idx = 0; idx < block->height; idx++)
+        for (int idx = 0; idx < block->height; idx++)
         {
             block->col[idx] = izq->col[idx];
         }
@@ -176,7 +176,7 @@ void load_dependencies(MatrixBlock *block, BlockMap *map)
     else
     {
         block->diag = 0;
-        for(int idx = 0; idx < block->height; idx++)
+        for (int idx = 0; idx < block->height; idx++)
         {
             block->col[idx] = 0;
         }
@@ -198,16 +198,16 @@ void free_block(int *matrix)
 void load_block(int *matrix, MatrixBlock *block)
 {
     matrix[0] = block->diag;
-    for(int j = 0; j < block->width; j++)
+    for (int j = 0; j < block->width; j++)
     {
-        matrix[j+1] = block->row[j];
+        matrix[j + 1] = block->row[j];
     }
     for (int i = 0; i < block->height; i++)
     {
         matrix[(i + 1) * (BLOCK_WIDTH + 1)] = block->col[i];
-        for(int j = 0; j < BLOCK_WIDTH; j++)
+        for (int j = 0; j < BLOCK_WIDTH; j++)
         {
-            matrix[(i + 1) * (BLOCK_WIDTH+1) + (j + 1)] = 0; //TODO hace falta?
+            matrix[(i + 1) * (BLOCK_WIDTH + 1) + (j + 1)] = 0; // TODO hace falta?
         }
     }
 }
@@ -217,8 +217,8 @@ void extract_bottom_row(BlockResult *result_msg, int *matrix)
 {
     int width = result_msg->block.width;
     int height = result_msg->block.height;
-    int* last_row = matrix + height * (BLOCK_WIDTH + 1) + 1;
-    for(int i = 0; i < width; i++)
+    int *last_row = matrix + height * (BLOCK_WIDTH + 1) + 1;
+    for (int i = 0; i < width; i++)
     {
         result_msg->block.row[i] = last_row[i];
     }
@@ -228,7 +228,7 @@ void extract_right_column(BlockResult *result_msg, int *matrix)
 {
     int width = result_msg->block.width;
     int height = result_msg->block.height;
-    int* last_col = matrix + width; //TODO: esto suma width*length(int) ?
+    int *last_col = matrix + width; // TODO: esto suma width*length(int) ?
     for (int i = 0; i < height; i++)
     {
         result_msg->block.col[i] = last_col[(i + 1) * (BLOCK_WIDTH + 1)];
@@ -239,7 +239,7 @@ void extract_last_diagonal(BlockResult *result_msg, int *matrix)
 {
     int width = result_msg->block.width;
     int height = result_msg->block.height;
-    result_msg->block.diag = matrix[height * ( BLOCK_WIDTH + 1 ) + width]; // la celda diagonal es la ultima celda del bloque
+    result_msg->block.diag = matrix[height * (BLOCK_WIDTH + 1) + width]; // la celda diagonal es la ultima celda del bloque
 }
 
 BlockParam *create_blockParam()
@@ -268,7 +268,6 @@ void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell
     result_msg->block.i = param_msg->block.i;
     result_msg->block.j = param_msg->block.j;
 
-
     result_msg->block.width = param_msg->block.width;
     result_msg->block.height = param_msg->block.height;
 
@@ -282,17 +281,16 @@ void free_BlockResult(BlockResult *msg)
     free(msg);
 }
 
-
 void print_info(MatrixBlock *block)
 {
     printf("Block (%d, %d): width=%d, height=%d, is_unlocked=%d\n", block->i, block->j, block->width, block->height, block->is_unlocked);
     printf("Row: ");
-    for(int i = 0; i < block->width; i++)
+    for (int i = 0; i < block->width; i++)
     {
         printf("%d ", block->row[i]);
     }
     printf("\nCol: ");
-    for(int i = 0; i < block->height; i++)
+    for (int i = 0; i < block->height; i++)
     {
         printf("%d ", block->col[i]);
     }
@@ -305,17 +303,16 @@ TracebackResult *create_tracebackResult()
     return msg;
 }
 
-void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, char *matched_seq1, char *matched_seq2)
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, int traceback_length, char *matched_seq1, char *matched_seq2)
 {
     traceback_msg->block_i = param_msg->block.i;
     traceback_msg->block_j = param_msg->block.j;
-    traceback_msg->width = param_msg->block.width;
-    traceback_msg->height = param_msg->block.height;
+    traceback_msg->length = traceback_length;
     traceback_msg->next_starting_cell = *starting_cell;
     traceback_msg->next_block = next_block;
 
-    memcpy(traceback_msg->matched_seq1, matched_seq1, traceback_msg->width * sizeof(char));
-    memcpy(traceback_msg->matched_seq2, matched_seq2, traceback_msg->height * sizeof(char));
+    memcpy(traceback_msg->matched_seq1, matched_seq1, traceback_msg->length * sizeof(char));
+    memcpy(traceback_msg->matched_seq2, matched_seq2, traceback_msg->length * sizeof(char));
 }
 
 void free_TracebackResult(TracebackResult *msg)
@@ -349,4 +346,3 @@ void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharA
     memcpy(msg->seq1, seq1->data + block->j * BLOCK_WIDTH, block->width);
     memcpy(msg->seq2, seq2->data + block->i * BLOCK_HEIGHT, block->height);
 }
-
