@@ -131,11 +131,11 @@ void init(bool load_checkpoint)
 {
     if (!load_checkpoint)
     {
-        checkpoint = create_checkpoint_file("checkpoint.bin");
+        checkpoint = create_checkpoint_file("./data/temp/checkpoint.bin");
     }
     else
     {
-        load_from_checkpoint("checkpoint.bin", map);
+        load_from_checkpoint("./data/tempt/checkpoint.bin", map);
     }
 
     logging(MASTER_RANK, "initialized\n");
