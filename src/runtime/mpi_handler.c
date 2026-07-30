@@ -12,12 +12,24 @@
 #include <string.h>
 #include "algorithm/slave.h"
 #include "algorithm/master.h"
+#include "algorithm/sequential.h"
 
 SWAReport *run_master(CharArray *seq1, CharArray *seq2, bool load_checkpoint)
 {
     SWAReport *report = malloc(sizeof(SWAReport));
     double start = MPI_Wtime();
     master(seq1, seq2, load_checkpoint);
+    double end = MPI_Wtime();
+    report->start_time = start;
+    report->end_time = end;
+    return report;
+}
+
+SWAReport *run_sequential(CharArray *seq1, CharArray *seq2, bool load_checkpoint)
+{
+    SWAReport *report = malloc(sizeof(SWAReport));
+    double start = MPI_Wtime();
+    sequential(seq1, seq2, load_checkpoint);
     double end = MPI_Wtime();
     report->start_time = start;
     report->end_time = end;
