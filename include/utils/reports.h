@@ -1,9 +1,13 @@
 #ifndef REPORTS_H
 #define REPORTS_H
 
+#include "collections/list.h"
+
 typedef struct {
     double start_time;
     double end_time;
+    List* matched_seq1;
+    List* matched_seq2;
     //TODO otra data: resultado algoritmo, metadata de ejecucion, hiperparametros
 } SWAReport;
 

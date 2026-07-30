@@ -23,12 +23,12 @@ void push(List **list, char value)
     *list = new_node;
 }
 
-int length(List *list)
+uint32_t length(List *list)
 {
     if (list == NULL)
         return 0;
     List *current = list;
-    int size = 1;
+    uint32_t size = 1;
     while (current->next != NULL)
     {
         current = current->next;
@@ -39,9 +39,9 @@ int length(List *list)
 
 char *print_list(List *list)
 {
-    int len = length(list);
+    uint32_t len = length(list);
     char *res = malloc(len + 1);
-    int i = 0;
+    uint32_t i = 0;
     while (list != NULL)
     {
         res[i] = list->value;

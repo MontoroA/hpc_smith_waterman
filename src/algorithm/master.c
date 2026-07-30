@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "algorithm/master.h"
 #include "algorithm/blocks.h"
@@ -25,16 +26,16 @@ MPI_Status status;
 MatrixBlock *max_score_block;
 TracebackResult *traceback_msg;
 FILE *checkpoint;
-int wavefront_number = 0;
+uint32_t wavefront_number = 0;
 List *matched_seq1;
 List *matched_seq2;
 
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 {
-    int i = block->i;
-    int j = block->j;
-    int width = map->width;
-    int height = map->height;
+    uint32_t i = block->i;
+    uint32_t j = block->j;
+    uint32_t width = map->width;
+    uint32_t height = map->height;
 
     if (i < (height - 1) && j < (width - 1))
     {
@@ -72,12 +73,12 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 
 void update_Traceback(TracebackResult *traceback_msg, List **matched_seq1, List **matched_seq2)
 {
-    for (int j = 0; j < traceback_msg->length - 1; j++)
+    for (uint32_t j = 0; j < traceback_msg->length - 1; j++)
     {
         push(matched_seq1, traceback_msg->matched_seq1[j]);
     }
 
-    for (int i = 0; i < traceback_msg->length - 1; i++)
+    for (uint32_t i = 0; i < traceback_msg->length - 1; i++)
     {
         push(matched_seq2, traceback_msg->matched_seq2[i]);
     }
@@ -85,18 +86,18 @@ void update_Traceback(TracebackResult *traceback_msg, List **matched_seq1, List 
 
 MatrixBlock *get_NextBlockTraceback(BlockMap *map, TracebackResult *traceback_msg)
 {
-    int i = traceback_msg->block_i;
-    int j = traceback_msg->block_j;
+    uint32_t i = traceback_msg->block_i;
+    uint32_t j = traceback_msg->block_j;
 
-    if (traceback_msg->next_block == DIAG && (i - 1 >= 0) && (j - 1 >= 0))
+    if (traceback_msg->next_block == DIAG && (i > 0) && (j > 0))
     {
         return get_MatrixBlock(i - 1, j - 1, map);
     }
-    else if (traceback_msg->next_block == UP && (i - 1 >= 0))
+    else if (traceback_msg->next_block == UP && (i > 0))
     {
         return get_MatrixBlock(i - 1, j, map);
     }
-    else if (traceback_msg->next_block == LEFT && (j - 1 >= 0))
+    else if (traceback_msg->next_block == LEFT && (j > 0))
     {
         return get_MatrixBlock(i, j - 1, map);
     }
@@ -176,10 +177,10 @@ void init(bool load_checkpoint)
         wavefront_number = load_from_checkpoint(checkpoint, map);
 
         // encolo los bloques que estan para ejecutar
-        for (int i = 0; i < map->height && i <= wavefront_number; i++)
+        for (uint32_t i = 0; i < map->height && i <= wavefront_number; i++)
         {
-            int j = wavefront_number - i;
-            if (j >= 0 && j < map->width)
+            uint32_t j = wavefront_number - i;
+            if (j < map->width) // && j >= 0
             {
                 block = get_MatrixBlock(i, j, map);
                 enqueue_ready_blocks(queue, map, block);
@@ -297,14 +298,13 @@ void traceback()
     }
 }
 
-void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
+SWAReport* master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
 {
     seq1 = sequence1;
     seq2 = sequence2;
+    
     init(load_checkpoint);
-
     completion();
-
     traceback();
 
     for (int i = 1; i < nro_procs; i++)
@@ -312,8 +312,9 @@ void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
         MPI_Send(NULL, 0, MPI_BYTE, i, TAG_TERMINATE, MPI_COMM_WORLD);
     }
 
-    save_list(matched_seq1, "./data/temp/matched_seq1.txt");
-    save_list(matched_seq2, "./data/temp/matched_seq2.txt");
+    SWAReport *report = malloc(sizeof(SWAReport));
+    report->matched_seq1 = matched_seq1;
+    report->matched_seq2 = matched_seq2;
 
     free(map);
     free(proc_available);
@@ -321,6 +322,5 @@ void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
     free_TracebackResult(traceback_msg);
-    free_list(matched_seq1);
-    free_list(matched_seq2);
+    return report;
 }

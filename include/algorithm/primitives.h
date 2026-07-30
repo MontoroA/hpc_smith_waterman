@@ -16,9 +16,9 @@ typedef enum {
 
 typedef struct
 {
-    int i;
-    int j;
-    int max_score;
+    uint32_t i;
+    uint32_t j;
+    uint32_t max_score;
 } MatrixCell;
 
 #endif

@@ -3,6 +3,7 @@
 
 #include <mpi.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "algorithm/primitives.h"
@@ -10,31 +11,31 @@
 #include "runtime/mpi_handler.h"
 #include "collections/arrays.h"
 
-#define BLOCK_HEIGHT 10000
-#define BLOCK_WIDTH 10000
+#define BLOCK_HEIGHT 100
+#define BLOCK_WIDTH 100
 
 typedef struct
 {
-    int i;
-    int j;
+    uint32_t i;
+    uint32_t j;
     bool is_unlocked;
     bool is_queued;
     // el master debe saber hasta donde va la fila y la columna para pasarselo al slave
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
     // En BlockParam son las dependencias, en BlockResult son las que se van a pasar al master
     // Tambien en el Map son las dependencias que sus vecinos usaran de el
-    int row[BLOCK_WIDTH];
-    int col[BLOCK_HEIGHT];
-    int diag;
+    uint32_t row[BLOCK_WIDTH];
+    uint32_t col[BLOCK_HEIGHT];
+    uint32_t diag;
     MatrixCell max_cell;
 } MatrixBlock;
 
 typedef struct
 {
     MatrixBlock *blocks;
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
 } BlockMap;
 
 typedef struct
@@ -52,9 +53,9 @@ typedef struct
 
 typedef struct
 {
-    int block_i;
-    int block_j;
-    int length;
+    uint32_t block_i;
+    uint32_t block_j;
+    uint32_t length;
     MatrixCell next_starting_cell;
     Direction next_block;
     char matched_seq1[BLOCK_WIDTH + BLOCK_HEIGHT];
@@ -63,19 +64,17 @@ typedef struct
 
 BlockMap *create_Map(CharArray *seq1, CharArray *seq2);
 
-MatrixBlock *get_MatrixBlock(int i, int j, BlockMap *map);
+MatrixBlock *get_MatrixBlock(uint32_t i, uint32_t j, BlockMap *map);
 
 void print_blockMap(BlockMap *map);
 
 void update_BlockMap(BlockResult *result_msg, BlockMap *map);
 
-// MatrixBlock **get_required_neighbors(MatrixBlock *block, BlockMap *map);
-
 BlockParam *create_blockParam();
 
 TracebackResult *create_tracebackResult();
 
-void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, int traceback_length, char *matched_seq1, char *matched_seq2);
+void load_tracebackResult(TracebackResult *traceback_msg, MatrixCell *starting_cell, Direction next_block, BlockParam *param_msg, uint32_t traceback_length, char *matched_seq1, char *matched_seq2);
 
 void free_TracebackResult(TracebackResult *msg);
 
@@ -83,27 +82,17 @@ bool block_is_ready(MatrixBlock *block, BlockMap *map);
 
 void load_dependencies(MatrixBlock *block, BlockMap *map);
 
-int *create_block(int width, int height);
+uint32_t *create_block(uint32_t width, uint32_t height);
 
-void free_block(int *block_dscr);
+void free_block(uint32_t *matrix);
 
-void load_block(int *matrix, MatrixBlock *block);
-
-// void load_block(BlockInfo *block_dscr, int index_x, int index_y, int start_seq1, int start_seq2, int num_rows, int num_cols, int *top_row, int *left_col, int prev_diag);
-
-// void calculate_block(BlockInfo *block_dscr, char *seq1, char *seq2);
-
-// void extract_bottom_row(BlockResult *result_msg, int *matrix, int len1, int len2);
-
-// void extract_right_column(BlockResult *result_msg, int *matrix, int len1, int len2);
-
-// void extract_last_diagonal(BlockResult *result_msg, int *matrix, int len1, int len2);
+void load_block(uint32_t *matrix, MatrixBlock *block);
 
 void free_BlockParam(BlockParam *param);
 
 BlockResult *create_blockResult();
 
-void load_blockResult(BlockResult *result_msg, int *matrix, MatrixCell *max_cell, BlockParam *param_msg);
+void load_blockResult(BlockResult *result_msg, uint32_t *matrix, MatrixCell *max_cell, BlockParam *param_msg);
 
 void free_BlockResult(BlockResult *msg);
 
@@ -112,17 +101,5 @@ MatrixBlock *get_TracebackStartingBlock(BlockMap *map);
 void load_BlockParam(BlockParam *msg, MatrixBlock *block, CharArray *seq1, CharArray *seq2);
 
 void print_info(MatrixBlock *block);
-
-void send_BlockParam(BlockParam *msg, int dest, int tag);
-
-void receive_BlockResult(BlockResult *msg, MPI_Status *status);
-
-void receive_TracebackResult(TracebackResult *msg, int *cnxt_pid, MPI_Status *status);
-
-void send_TracebackResult(TracebackResult *msg, int tag);
-
-void send_BlockResult(BlockResult *msg);
-
-void receive_BlockParam(BlockParam *msg, MPI_Status *status);
 
 #endif

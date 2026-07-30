@@ -83,7 +83,7 @@ uint32_t count_files(const char *path) {
         perror(path);
         return -1;
     }
-    int count = 0;
+    uint32_t count = 0;
     struct dirent *entry;
 
     while ((entry = readdir(dir)) != NULL) {
@@ -101,7 +101,7 @@ uint32_t count_files(const char *path) {
     }
 
     closedir(dir);
-    return (uint32_t)count;
+    return count;
 }
 
 char* save_sequence(const char* folder, CharArray* seq, const char* name) {
@@ -126,7 +126,7 @@ char* save_sequence(const char* folder, CharArray* seq, const char* name) {
     }
 
 
-    int written = fwrite(seq->data, 1, seq->length, filePointer);
+    uint32_t written = fwrite(seq->data, 1, seq->length, filePointer);
     fclose(filePointer);
     
     if(written != seq->length){
@@ -260,7 +260,6 @@ SequenceBuffer** execute_mode(int mode, char** params){
         case MODE_FROM_FILES:
             seqs = malloc(2*sizeof(SequenceBuffer*));
             seqs[0] = load_Sequence(params[0], 0);
-            printf("Sequence1: %s\n", params[0]);
             seqs[1] = load_Sequence(params[1], 0);
             if (seqs[0] == NULL || seqs[1] == NULL) {
                 free(seqs[0]);
@@ -325,6 +324,6 @@ void free_SequenceBuffer(SequenceBuffer* buffer){
         free(buffer->data->data);
         free(buffer->data);
     }
-    free(buffer->path);
+    // free(buffer->path);
     free(buffer);
 }

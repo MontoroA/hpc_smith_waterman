@@ -42,15 +42,15 @@ FILE *open_checkpoint_file(const char *filename)
     return file;
 }
 
-int save_wavefront_to_checkpoint(FILE *file, int wavefront_number, BlockMap *map)
+int save_wavefront_to_checkpoint(FILE *file, uint32_t wavefront_number, BlockMap *map)
 {
-    for (int i = 0; i < map->height && i <= wavefront_number; i++)
+    for (uint32_t i = 0; i < map->height && i <= wavefront_number; i++)
     {
-        int j = wavefront_number - i;
-        if (j >= 0 && j < map->width)
+        uint32_t j = wavefront_number - i;
+        if (j < map->width) // && j >= 0
         {
             MatrixBlock *block = get_MatrixBlock(i, j, map);
-            int block_number = i * map->width + j;
+            uint32_t block_number = i * map->width + j;
             long offset = sizeof(CheckpointHeader) + block_number * sizeof(MatrixBlock);
 
             if (fseek(file, offset, SEEK_SET) != 0)
@@ -102,16 +102,16 @@ int load_from_checkpoint(FILE *file, BlockMap *map)
         return -1;
     }
 
-    int last_wavefront_computed = header.last_wavefront_computed;
+    uint32_t last_wavefront_computed = header.last_wavefront_computed;
 
-    for (int i = 0; i < map->height; i++)
+    for (uint32_t i = 0; i < map->height; i++)
     {
-        for (int j = 0; j < map->width; j++)
+        for (uint32_t j = 0; j < map->width; j++)
         {
             if (i + j <= last_wavefront_computed)
             {
                 MatrixBlock *block = get_MatrixBlock(i, j, map);
-                int block_number = i * map->width + j;
+                uint32_t block_number = i * map->width + j;
                 long offset = sizeof(CheckpointHeader) + block_number * sizeof(MatrixBlock);
 
                 if (fseek(file, offset, SEEK_SET) != 0)
@@ -134,12 +134,12 @@ int load_from_checkpoint(FILE *file, BlockMap *map)
     return last_wavefront_computed;
 }
 
-void auto_save_checkpoint(int *next_wavefront_number, FILE *fp, BlockMap *map)
+void auto_save_checkpoint(uint32_t *next_wavefront_number, FILE *fp, BlockMap *map)
 {
-    for (int i = 0; i < map->height && i <= *next_wavefront_number; i++)
+    for (uint32_t i = 0; i < map->height && i <= *next_wavefront_number; i++)
     {
-        int j = *next_wavefront_number - i;
-        if (j >= 0 && j < map->width)
+        uint32_t j = *next_wavefront_number - i;
+        if (j < map->width) // && j >= 0
         {
             MatrixBlock *block = get_MatrixBlock(i, j, map);
             if (block->is_unlocked != true)

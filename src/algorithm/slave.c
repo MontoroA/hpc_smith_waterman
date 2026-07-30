@@ -15,7 +15,7 @@ void slave()
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
-    int *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
+    uint32_t *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
     if(matrix == NULL){
         // TODO precisa una mejor solucion
         logging(rank, "failed to allocate matrix block\n");
@@ -33,7 +33,7 @@ void slave()
     char *matched_seq2 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
     Direction next_block = 0;
     TracebackResult *traceback_msg = malloc(sizeof(TracebackResult));
-    int traceback_length = 0;
+    uint32_t traceback_length = 0;
 
     while (true)
     {

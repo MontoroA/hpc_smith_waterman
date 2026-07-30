@@ -28,6 +28,7 @@ char* now(){
     return strtok(buffer, "\n");
 }
 
+
 void logging(int cnxt_pid, const char *fmt, ...)
 {
     va_list args;
@@ -47,6 +48,7 @@ void logging(int cnxt_pid, const char *fmt, ...)
     printf("\n");
 }
 
+
 void logging_wo_header(const char *fmt, ...)
 {
     va_list args;
@@ -60,6 +62,10 @@ void reports(SWAReport* report)
     //TODO: implementar primitiva en messages para recibir reportes de los workers
     double tiempo = report->end_time - report->start_time;
     printf("Tiempo de ejecución: %f segundos\n", tiempo);
+
+    save_list(report->matched_seq1, "./data/temp/matched_seq1.txt");
+    save_list(report->matched_seq2, "./data/temp/matched_seq2.txt");
+
 }
 
 void free_Reports(SWAReport* report)
