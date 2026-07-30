@@ -30,13 +30,13 @@ uint32_t max_val(uint32_t *matrix, uint32_t i, uint32_t j, char *seq1, char *seq
 
 Direction reverse_max_val(uint32_t *matrix, uint32_t i, uint32_t j, char *seq1, char *seq2)
 {
-    uint32_t diag = matrix[(i - 1) * BLOCK_WIDTH + (j - 1)] + s(seq1[j - 1], seq2[i - 1]);
-    uint32_t sup = matrix[(i - 1) * BLOCK_WIDTH + j] + W(1);
+    int diag = matrix[(i - 1) * (BLOCK_WIDTH + 1) + (j - 1)] + s(seq1[j - 1], seq2[i - 1]);
+    int sup = matrix[(i - 1) * (BLOCK_WIDTH + 1) + j] + W(1);
     // int izq = matrix[i * BLOCK_WIDTH + (j - 1)] + W(1);
 
-    if (matrix[i * BLOCK_WIDTH + j] == diag)
+    if (matrix[i * (BLOCK_WIDTH + 1) + j] == diag)
         return DIAG;
-    if (matrix[i * BLOCK_WIDTH + j] == sup)
+    if (matrix[i * (BLOCK_WIDTH + 1) + j] == sup)
         return UP;
     else
         return LEFT;
@@ -78,15 +78,15 @@ void complete_block(uint32_t *matrix, MatrixCell *max_cell, CharArray *sequence1
 {
     char *seq1 = sequence1->data;
     char *seq2 = sequence2->data;
-    uint32_t nro_rows = sequence1->length;
-    uint32_t nro_cols = sequence2->length;
+    uint32_t nro_cols = sequence1->length;
+    uint32_t nro_rows = sequence2->length;
 
     uint32_t i, j;
     uint32_t max_i = 0, max_j = 0, max_score = 0;
 
-    for (i = 0; i < nro_cols; i++)
+    for (i = 0; i < nro_rows; i++)
     {
-        for (j = 0; j < nro_rows; j++) //
+        for (j = 0; j < nro_cols; j++) //
         {
             matrix[(i + 1) * (BLOCK_WIDTH + 1) + (j + 1)] = max_val(matrix, i, j, seq1, seq2);
             if (matrix[(i + 1) * (BLOCK_WIDTH + 1) + (j + 1)] > max_score)
@@ -112,7 +112,7 @@ Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, uint
     uint32_t current_score = cell->max_score;
     uint32_t k = 0;
 
-    while (j > 0 && i > 0)
+    while (j > 0 && i > 0 && current_score > 0)
     {
         Direction dir = reverse_max_val(matrix, i, j, seq1, seq2);
         if (dir == DIAG)
@@ -136,7 +136,7 @@ Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, uint
         }
 
         k++;
-        current_score = matrix[i * BLOCK_WIDTH + j];
+        current_score = matrix[i * (BLOCK_WIDTH + 1) + j];
     }
 
     cell->i = i;
@@ -148,7 +148,7 @@ Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, uint
     {
         return DIAG;
     }
-    else if (i == 0)
+    else if (j == 0)
     {
         return LEFT;
     }
