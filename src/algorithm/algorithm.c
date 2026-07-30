@@ -12,17 +12,18 @@ uint32_t max_val(uint32_t *matrix, uint32_t i, uint32_t j, char *seq1, char *seq
     int gap_penalty = W(1);
     int similarity = s(seq1[j], seq2[i]);
 
-    uint32_t *prev_row = matrix + (i * (BLOCK_WIDTH + 1));
-    uint32_t *curr_row = matrix + ((i + 1) * (BLOCK_WIDTH + 1));
-    int64_t diag = prev_row[j] + similarity;
-    int64_t sup = prev_row[j + 1] + gap_penalty;
-    int64_t izq = curr_row[j] + gap_penalty;
+    int *prev_row = matrix + (i * (BLOCK_WIDTH + 1));
+    int *curr_row = matrix + ((i + 1) * (BLOCK_WIDTH + 1));
+    int diag = prev_row[j] + similarity;
+    int sup = prev_row[j + 1] + gap_penalty;
+    int izq = curr_row[j] + gap_penalty;
 
-    int32_t max = diag;
+    
+    int max = diag;
     if (sup > max)
-        max = sup;
+    max = sup;
     if (izq > max)
-        max = izq;
+    max = izq;
     if (max < 0)
         max = 0;
     return (uint32_t)max;
@@ -101,6 +102,7 @@ void complete_block(uint32_t *matrix, MatrixCell *max_cell, CharArray *sequence1
     max_cell->i = max_i;
     max_cell->j = max_j;
     max_cell->max_score = max_score;
+
 
     // print_matrix(matrix, sequence1, sequence2);
 }
