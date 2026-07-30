@@ -16,7 +16,8 @@ void slave()
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
     int *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
-    if(matrix == NULL){
+    if (matrix == NULL)
+    {
         // TODO precisa una mejor solucion
         logging(rank, "failed to allocate matrix block\n");
         exit(EXIT_FAILURE);

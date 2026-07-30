@@ -72,12 +72,12 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 
 void update_Traceback(TracebackResult *traceback_msg, List **matched_seq1, List **matched_seq2)
 {
-    for (int j = 0; j < traceback_msg->length - 1; j++)
+    for (int j = 0; j < traceback_msg->length; j++)
     {
         push(matched_seq1, traceback_msg->matched_seq1[j]);
     }
 
-    for (int i = 0; i < traceback_msg->length - 1; i++)
+    for (int i = 0; i < traceback_msg->length; i++)
     {
         push(matched_seq2, traceback_msg->matched_seq2[i]);
     }
@@ -258,6 +258,7 @@ void traceback()
     traceback_msg = create_tracebackResult();
     block = get_MatrixBlock(max_score_block->i, max_score_block->j, map);
 
+    load_dependencies(block, map);
     load_BlockParam(param_msg, block, seq1, seq2);
     send_BlockParam(param_msg, 1, TAG_TRACEBACK_RUN);
     logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
@@ -288,6 +289,7 @@ void traceback()
             // cargo el starting_cell en el bloque para que el slave arranque desde ahi
             load_NextStartingCell(traceback_msg, block);
 
+            load_dependencies(block, map);
             // envio a que se empiece a correr el traceback sobre el bloque que ya va a estar calculado
             logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
             load_BlockParam(param_msg, block, seq1, seq2);
