@@ -1,6 +1,7 @@
 data/small/*
 data/medium/*
 data/large/*
+data/temp/*
 build/*
 .vscode/*
 data/temp/*

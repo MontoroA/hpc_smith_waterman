@@ -111,18 +111,18 @@ void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
 {
     if (traceback_msg->next_block == DIAG)
     {
-        block->max_cell.i = traceback_msg->next_starting_cell.i + block->height - 1;
-        block->max_cell.j = traceback_msg->next_starting_cell.j + block->width - 1;
+        block->max_cell.i = block->height; //traceback_msg->next_starting_cell.i + block->height - 1;
+        block->max_cell.j = block->width; //traceback_msg->next_starting_cell.j + block->width - 1;
     }
     else if (traceback_msg->next_block == UP)
     {
-        block->max_cell.i = traceback_msg->next_starting_cell.i + block->height - 1;
+        block->max_cell.i = block->height; //traceback_msg->next_starting_cell.i + block->height - 1;
         block->max_cell.j = traceback_msg->next_starting_cell.j;
     }
     else if (traceback_msg->next_block == LEFT)
     {
         block->max_cell.i = traceback_msg->next_starting_cell.i;
-        block->max_cell.j = traceback_msg->next_starting_cell.j + block->width - 1;
+        block->max_cell.j = block->width; //traceback_msg->next_starting_cell.j + block->width - 1;
     }
 
     block->max_cell.max_score = traceback_msg->next_starting_cell.max_score;
@@ -251,6 +251,10 @@ void completion()
                 break;
             }
         }
+        else
+        {
+            logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
+        }        
     }
 }
 
@@ -296,6 +300,10 @@ void traceback()
             load_BlockParam(param_msg, block, seq1, seq2);
             send_BlockParam(param_msg, 1, TAG_TRACEBACK_RUN);
             working_procs++;
+        }
+        else
+        {
+            logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
         }
     }
 }
