@@ -9,6 +9,7 @@
 #define OTHERS_RANK 1
 
 SWAReport *run_master(CharArray *seq1, CharArray *seq2, bool load_checkpoint);
+SWAReport *run_sequential(CharArray *seq1, CharArray *seq2, bool load_checkpoint);
 int run_worker();
 
 #endif

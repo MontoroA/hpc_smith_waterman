@@ -31,7 +31,28 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     if (size == 1)
     {
-        // TODO version secuencial
+
+        bool load_checkpoint = resume(argc, argv);
+        int mode = read_mode(argc, argv, load_checkpoint);
+        if (mode == MODE_INVALID)
+        {
+            logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
+            terminate_Workers();
+            return EXIT_FAILURE;
+        }
+
+        char **params = argv + 2;
+        SequenceBuffer **seqs = execute_mode(mode, params);
+        if (seqs != NULL)
+        {
+            CharArray *seq1 = seqs[0]->data;
+            CharArray *seq2 = seqs[1]->data;
+            SWAReport *report = run_sequential(seq1, seq2, load_checkpoint);
+            reports(report);
+            free_SequenceBuffer(seqs[0]);
+            free_SequenceBuffer(seqs[1]);
+            free_Reports(report);
+        }
         MPI_Finalize();
         return 0;
     }
