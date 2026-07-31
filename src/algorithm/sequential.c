@@ -46,10 +46,10 @@ void sequential_init(bool load_checkpoint)
         wavefront_number = load_from_checkpoint(checkpoint, map);
 
         // encolo los bloques que estan para ejecutar
-        for (int i = 0; i < map->height && i <= wavefront_number; i++)
+        for (uint32_t i = 0; i < map->height && i <= wavefront_number; i++)
         {
-            int j = wavefront_number - i;
-            if (j >= 0 && j < map->width)
+            uint32_t j = wavefront_number - i;
+            if (j < map->width)
             {
                 block = get_MatrixBlock(i, j, map);
                 enqueue_ready_blocks(queue, map, block);
@@ -111,7 +111,7 @@ void sequential_traceback()
     char *calculated_seq1 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
     char *calculated_seq2 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
     Direction next_block = 0;
-    int traceback_length = 0;
+    uint32_t traceback_length = 0;
 
     traceback_msg = create_tracebackResult();
     block = get_MatrixBlock(max_score_block->i, max_score_block->j, map);
@@ -162,7 +162,7 @@ void sequential_traceback()
     free_TracebackResult(traceback_msg);
 }
 
-void sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
+SWAReport *sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
 {
     seq1 = sequence1;
     seq2 = sequence2;
@@ -172,15 +172,15 @@ void sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint
 
     sequential_traceback();
 
-    save_list(matched_seq1, "./data/temp/matched_seq1.txt");
-    save_list(matched_seq2, "./data/temp/matched_seq2.txt");
+    SWAReport *report = malloc(sizeof(SWAReport));
+    report->matched_seq1 = matched_seq1;
+    report->matched_seq2 = matched_seq2;
 
     free(map);
     freeQueue(queue);
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
-    free_list(matched_seq1);
-    free_list(matched_seq2);
     free_block(matrix);
     free(cell);
+    return report;
 }

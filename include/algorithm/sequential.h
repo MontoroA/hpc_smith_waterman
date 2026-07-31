@@ -3,7 +3,8 @@
 
 #include "collections/arrays.h"
 #include <stdbool.h>
+#include "utils/reports.h"
 
-void sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint);
+SWAReport *sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint);
 
 #endif

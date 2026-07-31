@@ -26,10 +26,10 @@ extern MPI_Status status;
 extern MatrixBlock *max_score_block;
 extern TracebackResult *traceback_msg;
 extern FILE *checkpoint;
-extern int wavefront_number;
+extern uint32_t wavefront_number;
 extern List *matched_seq1;
 extern List *matched_seq2;
-extern int *matrix;
+extern uint32_t *matrix;
 extern MatrixCell *cell;
 
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block);

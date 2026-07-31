@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 #include "runtime/mpi_handler.h"
 #include "utils/cli.h"
 #include "utils/sequences.h"
@@ -25,9 +24,8 @@ SWAReport *run_master(CharArray *seq1, CharArray *seq2, bool load_checkpoint)
 
 SWAReport *run_sequential(CharArray *seq1, CharArray *seq2, bool load_checkpoint)
 {
-    SWAReport *report = malloc(sizeof(SWAReport));
     double start = MPI_Wtime();
-    sequential(seq1, seq2, load_checkpoint);
+    SWAReport *report = sequential(seq1, seq2, load_checkpoint);
     double end = MPI_Wtime();
     report->start_time = start;
     report->end_time = end;

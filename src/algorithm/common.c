@@ -15,19 +15,19 @@ MPI_Status status;
 MatrixBlock *max_score_block;
 TracebackResult *traceback_msg;
 FILE *checkpoint;
-int wavefront_number = 0;
-List *matched_seq1;
-List *matched_seq2;
+uint32_t wavefront_number = 0;
+List *matched_seq1 = NULL;
+List *matched_seq2 = NULL;
 
-int *matrix;
+uint32_t *matrix;
 MatrixCell *cell;
 
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 {
-    int i = block->i;
-    int j = block->j;
-    int width = map->width;
-    int height = map->height;
+    uint32_t i = block->i;
+    uint32_t j = block->j;
+    uint32_t width = map->width;
+    uint32_t height = map->height;
 
     if (i < (height - 1) && j < (width - 1))
     {
@@ -65,12 +65,12 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 
 void update_Traceback(TracebackResult *traceback_msg, List **matched_seq1, List **matched_seq2)
 {
-    for (int j = 0; j < traceback_msg->length; j++)
+    for (uint32_t j = 0; j < traceback_msg->length; j++)
     {
         push(matched_seq1, traceback_msg->matched_seq1[j]);
     }
 
-    for (int i = 0; i < traceback_msg->length; i++)
+    for (uint32_t i = 0; i < traceback_msg->length; i++)
     {
         push(matched_seq2, traceback_msg->matched_seq2[i]);
     }
@@ -78,18 +78,18 @@ void update_Traceback(TracebackResult *traceback_msg, List **matched_seq1, List 
 
 MatrixBlock *get_NextBlockTraceback(BlockMap *map, TracebackResult *traceback_msg)
 {
-    int i = traceback_msg->block_i;
-    int j = traceback_msg->block_j;
+    uint32_t i = traceback_msg->block_i;
+    uint32_t j = traceback_msg->block_j;
 
-    if (traceback_msg->next_block == DIAG && (i - 1 >= 0) && (j - 1 >= 0))
+    if (traceback_msg->next_block == DIAG && (i > 0) && (j > 0))
     {
         return get_MatrixBlock(i - 1, j - 1, map);
     }
-    else if (traceback_msg->next_block == UP && (i - 1 >= 0))
+    else if (traceback_msg->next_block == UP && (i > 0))
     {
         return get_MatrixBlock(i - 1, j, map);
     }
-    else if (traceback_msg->next_block == LEFT && (j - 1 >= 0))
+    else if (traceback_msg->next_block == LEFT && (j > 0))
     {
         return get_MatrixBlock(i, j - 1, map);
     }
