@@ -1,6 +1,6 @@
 CC = mpicc 
-CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude 
-LDFLAGS = -fopenmp -lm
+CFLAGS = -g -O0 -fsanitize=address -fno-omit-frame-pointer
+LDFLAGS = -fsanitize=address
 
 MAIN_SRC = src/main.c
 UTILS_SRC = src/utils/cli.c src/utils/sequences.c src/utils/reports.c
