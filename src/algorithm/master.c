@@ -147,6 +147,7 @@ void traceback()
     logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
 
     working_procs = 1;
+    uint32_t traceback_progress = 0;
 
     while (true)
     {
@@ -159,7 +160,8 @@ void traceback()
             // actualizo las secuencias encontradas en el traceback
             update_Traceback(traceback_msg, &matched_seq1, &matched_seq2);
 
-            print_progress_bar(max_score_block->max_cell.max_score - traceback_msg->next_starting_cell.max_score, max_score_block->max_cell.max_score, "Traceback Progress");
+            print_progress_bar(traceback_progress, max_score_block->max_cell.max_score, "Traceback Progress");
+            traceback_progress += traceback_msg->length;
 
             // obtengo el siguiente bloque para el traceback
             block = get_NextBlockTraceback(map, traceback_msg);
@@ -167,6 +169,7 @@ void traceback()
             // si no hay siguiente bloque para el traceback es porque termino
             if (block == NULL)
             {
+                print_progress_bar(100, 100, "Traceback Progress");
                 printf("\n");
                 logging(MASTER_RANK, "traceback completed \n");
                 break;
