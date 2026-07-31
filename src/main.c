@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "include/utils/cli.h"
+#include "utils/cli.h"
 #include "utils/sequences.h"
 #include "utils/reports.h"
 #include "runtime/mpi_handler.h"
