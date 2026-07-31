@@ -7,7 +7,7 @@
 #include "collections/arrays.h"
 #include "algorithm/blocks.h"
 
-int max_val(int *matrix, int i, int j, char *seq1, char *seq2)
+uint32_t max_val(uint32_t *matrix, uint32_t i, uint32_t j, char *seq1, char *seq2)
 {
     int gap_penalty = W(1);
     int similarity = s(seq1[j], seq2[i]);
@@ -18,17 +18,18 @@ int max_val(int *matrix, int i, int j, char *seq1, char *seq2)
     int sup = prev_row[j + 1] + gap_penalty;
     int izq = curr_row[j] + gap_penalty;
 
+    
     int max = diag;
     if (sup > max)
-        max = sup;
+    max = sup;
     if (izq > max)
-        max = izq;
+    max = izq;
     if (max < 0)
         max = 0;
-    return max;
+    return (uint32_t)max;
 }
 
-Direction reverse_max_val(int *matrix, int i, int j, char *seq1, char *seq2)
+Direction reverse_max_val(uint32_t *matrix, uint32_t i, uint32_t j, char *seq1, char *seq2)
 {
     int diag = matrix[(i - 1) * (BLOCK_WIDTH + 1) + (j - 1)] + s(seq1[j - 1], seq2[i - 1]);
     int sup = matrix[(i - 1) * (BLOCK_WIDTH + 1) + j] + W(1);
@@ -42,14 +43,14 @@ Direction reverse_max_val(int *matrix, int i, int j, char *seq1, char *seq2)
         return LEFT;
 }
 
-void print_matrix(int *matrix, CharArray *sequence1, CharArray *sequence2)
+void print_matrix(uint32_t *matrix, CharArray *sequence1, CharArray *sequence2)
 {
-    int rows = sequence2->length + 1;
-    int cols = sequence1->length + 1;
-    int row_size = BLOCK_WIDTH + 1;
+    uint32_t rows = sequence2->length + 1;
+    uint32_t cols = sequence1->length + 1;
+    uint32_t row_size = BLOCK_WIDTH + 1;
 
     printf("       ");
-    for (int j = 0; j < cols; j++)
+    for (uint32_t j = 0; j < cols; j++)
     {
         if (j == 0)
             printf("       ");
@@ -58,14 +59,14 @@ void print_matrix(int *matrix, CharArray *sequence1, CharArray *sequence2)
     }
     printf("\n");
 
-    for (int i = 0; i < rows; i++)
+    for (uint32_t i = 0; i < rows; i++)
     {
         if (i == 0)
             printf("       ");
         else
             printf("%6c ", sequence2->data[i - 1]);
 
-        for (int j = 0; j < cols; j++)
+        for (uint32_t j = 0; j < cols; j++)
         {
             printf("%6d ", matrix[i * row_size + j]);
         }
@@ -74,16 +75,15 @@ void print_matrix(int *matrix, CharArray *sequence1, CharArray *sequence2)
     printf("\n\n");
 }
 
-void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, CharArray *sequence2)
+void complete_block(uint32_t *matrix, MatrixCell *max_cell, CharArray *sequence1, CharArray *sequence2)
 {
     char *seq1 = sequence1->data;
     char *seq2 = sequence2->data;
-    int nro_cols = sequence1->length;
-    int nro_rows = sequence2->length;
+    uint32_t nro_cols = sequence1->length;
+    uint32_t nro_rows = sequence2->length;
 
-    int i;
-    int j;
-    int max_i = 0, max_j = 0, max_score = 0;
+    uint32_t i, j;
+    uint32_t max_i = 0, max_j = 0, max_score = 0;
 
     for (i = 0; i < nro_rows; i++)
     {
@@ -103,15 +103,16 @@ void complete_block(int *matrix, MatrixCell *max_cell, CharArray *sequence1, Cha
     max_cell->j = max_j;
     max_cell->max_score = max_score;
 
+
     // print_matrix(matrix, sequence1, sequence2);
 }
 
-Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, int *matrix, MatrixCell *cell, int *traceback_length, char *seq1, char *seq2)
+Direction calculate_traceback_block(char *matched_seq1, char *matched_seq2, uint32_t *matrix, MatrixCell *cell, uint32_t *traceback_length, char *seq1, char *seq2)
 {
-    int i = cell->i;
-    int j = cell->j;
-    int current_score = cell->max_score;
-    int k = 0;
+    uint32_t i = cell->i;
+    uint32_t j = cell->j;
+    uint32_t current_score = cell->max_score;
+    uint32_t k = 0;
 
     while (j > 0 && i > 0 && current_score > 0)
     {

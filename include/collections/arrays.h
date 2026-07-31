@@ -1,14 +1,11 @@
 #ifndef ARRAYS_H
 #define ARRAYS_H
 
-typedef struct{
-    int* data;
-    int length;
-} IntArray;
+#include <stdint.h>
 
 typedef struct{
     char* data;
-    int length;
+    uint32_t length;
 } CharArray;
 
 

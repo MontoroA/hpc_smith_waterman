@@ -2,7 +2,7 @@
 
 #include "collections/queue.h"
 
-Queue *createQueue(int size)
+Queue *createQueue(uint32_t size)
 {
     if (size <= 0)
     {
@@ -15,7 +15,7 @@ Queue *createQueue(int size)
         return NULL;
     }
 
-    q->items = (MatrixBlock **)malloc(size * sizeof(MatrixBlock));
+    q->items = (MatrixBlock **)malloc(size * sizeof(MatrixBlock*));
     if (!q->items)
     {
         free(q);
@@ -24,17 +24,18 @@ Queue *createQueue(int size)
     q->front = -1;
     q->rear = -1;
     q->size = size;
+    q->count = 0;
     return q;
 }
 
 bool isEmpty(Queue *q)
 {
-    return (q->front == -1);
+    return (q->count == 0);
 }
 
 bool isFull(Queue *q)
 {
-    return (((q->rear + 1) % q->size) == q->front);
+    return (q->count == q->size);
 }
 
 bool enqueue(Queue *q, MatrixBlock *value)
@@ -49,6 +50,7 @@ bool enqueue(Queue *q, MatrixBlock *value)
     }
     q->rear = (q->rear + 1) % q->size;
     q->items[q->rear] = value;
+    q->count++;
     value->is_queued = true;
     return true;
 }
@@ -71,6 +73,7 @@ MatrixBlock *dequeue(Queue *q)
     {
         q->front = (q->front + 1) % q->size;
     }
+    q->count--;
     value->is_queued = false;
     return value;
 }

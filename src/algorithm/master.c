@@ -50,10 +50,10 @@ void init(bool load_checkpoint)
         wavefront_number = load_from_checkpoint(checkpoint, map);
 
         // encolo los bloques que estan para ejecutar
-        for (int i = 0; i < map->height && i <= wavefront_number; i++)
+        for (uint32_t i = 0; i < map->height && i <= wavefront_number; i++)
         {
-            int j = wavefront_number - i;
-            if (j >= 0 && j < map->width)
+            uint32_t j = wavefront_number - i;
+            if (j < map->width) // && j >= 0
             {
                 block = get_MatrixBlock(i, j, map);
                 enqueue_ready_blocks(queue, map, block);
@@ -174,14 +174,13 @@ void traceback()
     }
 }
 
-void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
+SWAReport *master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
 {
     seq1 = sequence1;
     seq2 = sequence2;
+
     init(load_checkpoint);
-
     completion();
-
     traceback();
 
     for (int i = 1; i < nro_procs; i++)
@@ -189,8 +188,9 @@ void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
         MPI_Send(NULL, 0, MPI_BYTE, i, TAG_TERMINATE, MPI_COMM_WORLD);
     }
 
-    save_list(matched_seq1, "./data/temp/matched_seq1.txt");
-    save_list(matched_seq2, "./data/temp/matched_seq2.txt");
+    SWAReport *report = malloc(sizeof(SWAReport));
+    report->matched_seq1 = matched_seq1;
+    report->matched_seq2 = matched_seq2;
 
     free(map);
     free(proc_available);
@@ -198,6 +198,5 @@ void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
     free_TracebackResult(traceback_msg);
-    free_list(matched_seq1);
-    free_list(matched_seq2);
+    return report;
 }
