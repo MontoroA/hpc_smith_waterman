@@ -32,6 +32,7 @@ extern List *matched_seq2;
 extern uint32_t *matrix;
 extern MatrixCell *cell;
 
+void print_progress_bar(uint32_t current, uint32_t total, char *name);
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block);
 void update_Traceback(TracebackResult *traceback_msg, List **matched_seq1, List **matched_seq2);
 MatrixBlock *get_NextBlockTraceback(BlockMap *map, TracebackResult *traceback_msg);

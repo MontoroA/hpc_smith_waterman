@@ -22,6 +22,28 @@ List *matched_seq2 = NULL;
 uint32_t *matrix;
 MatrixCell *cell;
 
+void print_progress_bar(uint32_t current, uint32_t total, char *name)
+{
+    const uint32_t bar_width = 50;
+
+    float progress = (float)current / total;
+    uint32_t filled = (uint32_t)(progress * bar_width);
+
+    printf("\r%s [", name);
+
+    for (uint32_t i = 0; i < bar_width; i++)
+    {
+        if (i < filled)
+            printf("#");
+        else
+            printf("-");
+    }
+
+    printf("] %3d%%", (int)(progress * 100));
+
+    fflush(stdout);
+}
+
 void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
 {
     uint32_t i = block->i;
@@ -103,18 +125,18 @@ void load_NextStartingCell(TracebackResult *traceback_msg, MatrixBlock *block)
 {
     if (traceback_msg->next_block == DIAG)
     {
-        block->max_cell.i = block->height; //traceback_msg->next_starting_cell.i + block->height - 1;
-        block->max_cell.j = block->width; //traceback_msg->next_starting_cell.j + block->width - 1;
+        block->max_cell.i = block->height; // traceback_msg->next_starting_cell.i + block->height - 1;
+        block->max_cell.j = block->width;  // traceback_msg->next_starting_cell.j + block->width - 1;
     }
     else if (traceback_msg->next_block == UP)
     {
-        block->max_cell.i = block->height; //traceback_msg->next_starting_cell.i + block->height - 1;
+        block->max_cell.i = block->height; // traceback_msg->next_starting_cell.i + block->height - 1;
         block->max_cell.j = traceback_msg->next_starting_cell.j;
     }
     else if (traceback_msg->next_block == LEFT)
     {
         block->max_cell.i = traceback_msg->next_starting_cell.i;
-        block->max_cell.j = block->width; //traceback_msg->next_starting_cell.j + block->width - 1;
+        block->max_cell.j = block->width; // traceback_msg->next_starting_cell.j + block->width - 1;
     }
 
     block->max_cell.max_score = traceback_msg->next_starting_cell.max_score;
