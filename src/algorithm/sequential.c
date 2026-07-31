@@ -3,12 +3,12 @@
 
 void sequential_init(bool load_checkpoint)
 {
-    logging(MASTER_RANK, "initialized\n");
+    logging(MASTER_RANK, "Sequential initialized\n");
     map = create_Map(seq1, seq2);
     queue = createQueue(map->width * map->height);
     if (queue == NULL)
     {
-        logging(MASTER_RANK, "failed to allocate work queue\n");
+        logging(MASTER_RANK, "Sequential failed to allocate work queue\n");
         exit(EXIT_FAILURE);
     }
     result_msg = create_blockResult();
@@ -27,7 +27,7 @@ void sequential_init(bool load_checkpoint)
     if (matrix == NULL)
     {
         // TODO precisa una mejor solucion
-        logging(1, "failed to allocate matrix block\n");
+        logging(MASTER_RANK, "Sequential failed to allocate matrix block\n");
         exit(EXIT_FAILURE);
     }
 
@@ -38,6 +38,7 @@ void sequential_init(bool load_checkpoint)
         load_dependencies(block, map);
 
         enqueue(queue, block);
+        logging(MASTER_RANK, "Sequential starting\n");
     }
     else
     {
@@ -54,6 +55,7 @@ void sequential_init(bool load_checkpoint)
                 enqueue_ready_blocks(queue, map, block);
             }
         }
+        logging(MASTER_RANK, "Sequential loaded from checkpoint\n");
     }
 }
 
@@ -80,6 +82,7 @@ void sequential_completion()
 
         load_block(matrix, &param_msg->block);
         complete_block(matrix, cell, completion_seq1, completion_seq2);
+        logging(MASTER_RANK, "Block (%d, %d) calculated\n", param_msg->block.i, param_msg->block.j);
         load_blockResult(result_msg, matrix, cell, param_msg);
 
         if (result_msg->result.max_score > max_score_block->max_cell.max_score)
@@ -89,6 +92,7 @@ void sequential_completion()
             max_score_block->max_cell.i = result_msg->result.i;
             max_score_block->max_cell.j = result_msg->result.j;
             max_score_block->max_cell.max_score = result_msg->result.max_score;
+            logging(MASTER_RANK, "New max score block (%d, %d) with max score %d\n", max_score_block->i, max_score_block->j, max_score_block->max_cell.max_score);
         }
 
         update_BlockMap(result_msg, map);
@@ -111,6 +115,7 @@ void sequential_traceback()
 
     traceback_msg = create_tracebackResult();
     block = get_MatrixBlock(max_score_block->i, max_score_block->j, map);
+    logging(MASTER_RANK, "Starting traceback from block (%d, %d) with max score %d\n", block->i, block->j, max_score_block->max_cell.max_score);
     while (true)
     {
         load_dependencies(block, map);
@@ -123,6 +128,7 @@ void sequential_traceback()
 
         load_block(matrix, &param_msg->block);
         complete_block(matrix, cell, traceback_seq1, traceback_seq2);
+        logging(MASTER_RANK, "Block (%d, %d) calculated\n", param_msg->block.i, param_msg->block.j);
 
         // es la celda por la que debemos arrancar el traceback en este bloque
         cell->i = param_msg->block.max_cell.i;
@@ -149,11 +155,11 @@ void sequential_traceback()
         // cargo el starting_cell en el bloque para que el slave arranque desde ahi
         load_NextStartingCell(traceback_msg, block);
     }
-
-    free(traceback_seq1);
-    free(traceback_seq2);
     free(calculated_seq1);
     free(calculated_seq2);
+    free(traceback_seq1);
+    free(traceback_seq2);
+    free_TracebackResult(traceback_msg);
 }
 
 void sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
@@ -170,10 +176,9 @@ void sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint
     save_list(matched_seq2, "./data/temp/matched_seq2.txt");
 
     free(map);
-    free(queue);
+    freeQueue(queue);
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
-    free_TracebackResult(traceback_msg);
     free_list(matched_seq1);
     free_list(matched_seq2);
     free_block(matrix);

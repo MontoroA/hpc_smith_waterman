@@ -97,6 +97,7 @@ void completion()
                 max_score_block->max_cell.i = result_msg->result.i;
                 max_score_block->max_cell.j = result_msg->result.j;
                 max_score_block->max_cell.max_score = result_msg->result.max_score;
+                logging(MASTER_RANK, "New max score block (%d, %d) with max score %d\n", max_score_block->i, max_score_block->j, max_score_block->max_cell.max_score);
             }
             update_BlockMap(result_msg, map);
             enqueue_ready_blocks(queue, map, &result_msg->block);
@@ -193,7 +194,7 @@ void master(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
 
     free(map);
     free(proc_available);
-    free(queue);
+    freeQueue(queue);
     free_BlockParam(param_msg);
     free_BlockResult(result_msg);
     free_TracebackResult(traceback_msg);

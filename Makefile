@@ -25,6 +25,5 @@ build/%.o: src/%.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
 clean:
 	rm -rf $(OBJDIR) $(TARGET)

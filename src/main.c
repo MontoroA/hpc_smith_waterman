@@ -32,7 +32,6 @@ int main(int argc, char *argv[])
 
     if (size == 1)
     {
-        // TODO version secuencial
 
         bool load_checkpoint = resume(argc, argv);
         int mode = read_mode(argc, argv, load_checkpoint);
