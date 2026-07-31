@@ -9,7 +9,7 @@
 
 void write_in_file(const char *filepath, char *data, const int length)
 {
-    FILE *filePointer = fopen(filepath, "wb");
+    FILE *filePointer = fopen(filepath, "ab");
     if (filePointer == NULL)
     {
         logging(0, "Could not open file for writing: %s\n", filepath);
