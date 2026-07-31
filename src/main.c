@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "utils/cli.h"
+#include "include/utils/cli.h"
 #include "utils/sequences.h"
 #include "utils/reports.h"
 #include "runtime/mpi_handler.h"
@@ -25,7 +25,7 @@ bool resume(int argc, char **argv)
 int main(int argc, char *argv[])
 {
     MPI_Init(&argc, &argv);
-    
+
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
