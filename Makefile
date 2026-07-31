@@ -4,7 +4,7 @@ LDFLAGS = -fopenmp -lm
 
 MAIN_SRC = src/main.c
 UTILS_SRC = src/utils/cli.c src/utils/sequences.c src/utils/reports.c
-ALGORITHM_SRC = src/algorithm/algorithm.c src/algorithm/blocks.c src/algorithm/master.c src/algorithm/slave.c
+ALGORITHM_SRC = src/algorithm/algorithm.c src/algorithm/blocks.c src/algorithm/common.c src/algorithm/master.c src/algorithm/slave.c src/algorithm/sequential.c
 PRIMITIVES_SRC = src/collections/list.c src/collections/queue.c
 RUNTIME_SRC = src/runtime/mpi_handler.c src/runtime/messages.c src/runtime/checkpoint.c
 
@@ -24,7 +24,6 @@ $(TARGET): $(OBJ)
 build/%.o: src/%.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-
 
 clean:
 	rm -rf $(OBJDIR) $(TARGET)
