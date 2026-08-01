@@ -8,6 +8,7 @@
 #include "utils/reports.h"
 #include "runtime/mpi_handler.h"
 #include "runtime/messages.h"
+#include "algorithm/blocks.h"
 
 bool resume(int argc, char **argv)
 {

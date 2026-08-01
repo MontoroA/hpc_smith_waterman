@@ -11,8 +11,12 @@
 #include "runtime/mpi_handler.h"
 #include "collections/arrays.h"
 
-#define BLOCK_HEIGHT 10000
-#define BLOCK_WIDTH 10000
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 10000
+#endif
+
+#define BLOCK_WIDTH BLOCK_SIZE
+#define BLOCK_HEIGHT BLOCK_SIZE
 
 typedef struct
 {

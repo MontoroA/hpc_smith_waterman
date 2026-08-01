@@ -1,5 +1,6 @@
 CC = mpicc 
-CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude 
+BLOCK_SIZE ?= 10000
+CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude -DBLOCK_SIZE=$(BLOCK_SIZE)
 LDFLAGS = -fopenmp -lm
 
 MAIN_SRC = src/main.c

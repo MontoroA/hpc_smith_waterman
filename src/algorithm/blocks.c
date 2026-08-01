@@ -11,7 +11,7 @@ MatrixBlock *get_BlockMap(uint32_t i, uint32_t j, BlockMap *map)
 {
     return &map->blocks[i * map->width + j];
 }
-    
+
 MatrixBlock *get_MatrixBlock(uint32_t i, uint32_t j, BlockMap *map)
 {
     return &map->blocks[i * map->width + j];

@@ -4,7 +4,7 @@
 ### Matías Sención 5.263.989-9
 
 La interacción con el sistema se da a través de consola. Los pasos para ejecutar son
-- make
+- make BLOCK_SIZE=n(largo bloque=ancho bloque)
 - ./run.sh m params
 - make clean (Para limpiar la compilación)
 
