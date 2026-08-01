@@ -120,15 +120,19 @@ void completion()
                 }
             }
 
+            print_progress_bar(wavefront_number, map->height + map->width, "Completion Progress");
+
             if (isEmpty(queue) && working_procs == 0)
             {
+                print_progress_bar(100, 100, "Completion Progress");
+                printf("\n");
                 break;
             }
         }
         else
         {
             logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
-        }        
+        }
     }
 }
 
@@ -143,6 +147,7 @@ void traceback()
     logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
 
     working_procs = 1;
+    uint32_t traceback_progress = 0;
 
     while (true)
     {
@@ -155,12 +160,17 @@ void traceback()
             // actualizo las secuencias encontradas en el traceback
             update_Traceback(traceback_msg, &matched_seq1, &matched_seq2);
 
+            print_progress_bar(traceback_progress, max_score_block->max_cell.max_score, "Traceback Progress");
+            traceback_progress += traceback_msg->length;
+
             // obtengo el siguiente bloque para el traceback
             block = get_NextBlockTraceback(map, traceback_msg);
 
             // si no hay siguiente bloque para el traceback es porque termino
             if (block == NULL)
             {
+                print_progress_bar(100, 100, "Traceback Progress");
+                printf("\n");
                 logging(MASTER_RANK, "traceback completed \n");
                 break;
             }

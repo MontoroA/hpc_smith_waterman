@@ -67,8 +67,6 @@ void sequential_completion()
     {
         auto_save_checkpoint(&wavefront_number, checkpoint, map);
 
-        if (isEmpty(queue))
-            break;
         block = dequeue(queue);
 
         load_dependencies(block, map);
@@ -97,6 +95,13 @@ void sequential_completion()
 
         update_BlockMap(result_msg, map);
         enqueue_ready_blocks(queue, map, &result_msg->block);
+        print_progress_bar(wavefront_number, map->height + map->width, "Completion Progress");
+        if (isEmpty(queue))
+        {
+            print_progress_bar(100, 100, "Completion Progress");
+            printf("\n");
+            break;
+        }
     }
     free(completion_seq1);
     free(completion_seq2);
@@ -112,6 +117,7 @@ void sequential_traceback()
     char *calculated_seq2 = calloc(BLOCK_WIDTH + BLOCK_HEIGHT, sizeof(char));
     Direction next_block = 0;
     uint32_t traceback_length = 0;
+    uint32_t traceback_progress = 0;
 
     traceback_msg = create_tracebackResult();
     block = get_MatrixBlock(max_score_block->i, max_score_block->j, map);
@@ -142,12 +148,17 @@ void sequential_traceback()
         // actualizo las secuencias encontradas en el traceback
         update_Traceback(traceback_msg, &matched_seq1, &matched_seq2);
 
+        print_progress_bar(traceback_progress, max_score_block->max_cell.max_score, "Traceback Progress");
+        traceback_progress += traceback_length;
+
         // obtengo el siguiente bloque para el traceback
         block = get_NextBlockTraceback(map, traceback_msg);
 
         // si no hay siguiente bloque para el traceback es porque termino
         if (block == NULL)
         {
+            print_progress_bar(100, 100, "Traceback Progress");
+            printf("\n");
             logging(MASTER_RANK, "traceback completed \n");
             break;
         }
