@@ -151,7 +151,7 @@ void sequential_traceback()
         // actualizo las secuencias encontradas en el traceback
         update_Traceback(traceback_msg, &matched_seq1, &matched_seq2);
 
-        print_progress_bar(traceback_progress, max_score_block->max_cell.max_score, "Traceback Progress");
+        print_progress_bar(traceback_progress, max_score_block->max_cell.max_score, "Traceback Progress ");
         traceback_progress += traceback_length;
 
         // obtengo el siguiente bloque para el traceback
@@ -160,7 +160,7 @@ void sequential_traceback()
         // si no hay siguiente bloque para el traceback es porque termino
         if (block == NULL)
         {
-            print_progress_bar(100, 100, "Traceback Progress");
+            print_progress_bar(100, 100, "Traceback Progress ");
             printf("\n");
             logging(MASTER_RANK, "traceback completed \n");
             break;
