@@ -91,8 +91,11 @@ int main(int argc, char *argv[])
             free_SequenceBuffer(seqs[0]);
             free_SequenceBuffer(seqs[1]);
             free_Reports(report);
+	    printf("master: salgo del if\n");
         }
+        printf("master: entro terminate_workers\n");
         terminate_Workers();
+        printf("master: salgo de terminate_workers\n");
     }
 
     printf("Rank %d: before MPI_Finalize\n", rank);
