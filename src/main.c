@@ -55,13 +55,7 @@ int main(int argc, char *argv[])
             free_Reports(report);
         }
 
-        printf("Rank %d: before MPI_Finalize\n", rank);
-        fflush(stdout);
-
         MPI_Finalize();
-
-        printf("Rank %d: after MPI_Finalize\n", rank);
-        fflush(stdout);
         return 0;
     }
 
