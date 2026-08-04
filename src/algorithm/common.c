@@ -58,7 +58,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         {
             load_dependencies(diag, map);
             enqueue(queue, diag);
-            logging(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
+            //logging(MASTER_RANK, "enqueued block (%d, %d)\n", diag->i, diag->j);
         }
     }
 
@@ -69,7 +69,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         {
             load_dependencies(der, map);
             enqueue(queue, der);
-            logging(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
+            //logging(MASTER_RANK, "enqueued block (%d, %d)\n", der->i, der->j);
         }
     }
 
@@ -80,7 +80,7 @@ void enqueue_ready_blocks(Queue *queue, BlockMap *map, MatrixBlock *block)
         {
             load_dependencies(inf, map);
             enqueue(queue, inf);
-            logging(MASTER_RANK, "enqueued block (%d, %d)\n", inf->i, inf->j);
+            //logging(MASTER_RANK, "enqueued block (%d, %d)\n", inf->i, inf->j);
         }
     }
 }

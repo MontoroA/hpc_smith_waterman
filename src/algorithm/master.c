@@ -3,12 +3,12 @@
 
 void init(bool load_checkpoint)
 {
-    logging(MASTER_RANK, "initialized\n");
+    //logging(MASTER_RANK, "initialized\n");
     map = create_Map(seq1, seq2);
     queue = createQueue(map->width * map->height);
     if (queue == NULL)
     {
-        logging(MASTER_RANK, "failed to allocate work queue\n");
+        //logging(MASTER_RANK, "failed to allocate work queue\n");
         exit(EXIT_FAILURE);
     }
     result_msg = create_blockResult();
@@ -29,7 +29,7 @@ void init(bool load_checkpoint)
     matched_seq1 = NULL;
     matched_seq2 = NULL;
 
-    logging(MASTER_RANK, "ready for distributing work\n");
+    //logging(MASTER_RANK, "ready for distributing work\n");
 
     if (!load_checkpoint)
     {
@@ -69,7 +69,7 @@ void init(bool load_checkpoint)
                 if (isEmpty(queue))
                     break;
                 block = dequeue(queue);
-                logging(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
+                //logging(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
                 load_BlockParam(param_msg, block, seq1, seq2);
                 send_BlockParam(param_msg, i, TAG_BLOCK_PARAM);
                 proc_available[i] = false;
@@ -87,7 +87,7 @@ void completion()
 
         receive_BlockResult(result_msg, &status);
         cnxt_pid = status.MPI_SOURCE;
-        logging(MASTER_RANK, "received result for block (%d, %d) from process %d\n", result_msg->block.i, result_msg->block.j, cnxt_pid);
+        //logging(MASTER_RANK, "received result for block (%d, %d) from process %d\n", result_msg->block.i, result_msg->block.j, cnxt_pid);
         if (status.MPI_TAG == TAG_BLOCK_RESULT)
         {
             if (result_msg->result.max_score > max_score_block->max_cell.max_score)
@@ -97,7 +97,7 @@ void completion()
                 max_score_block->max_cell.i = result_msg->result.i;
                 max_score_block->max_cell.j = result_msg->result.j;
                 max_score_block->max_cell.max_score = result_msg->result.max_score;
-                logging(MASTER_RANK, "New max score block (%d, %d) with max score %d\n", max_score_block->i, max_score_block->j, max_score_block->max_cell.max_score);
+                //logging(MASTER_RANK, "New max score block (%d, %d) with max score %d\n", max_score_block->i, max_score_block->j, max_score_block->max_cell.max_score);
             }
             update_BlockMap(result_msg, map);
             enqueue_ready_blocks(queue, map, &result_msg->block);
@@ -112,7 +112,7 @@ void completion()
                     if (isEmpty(queue))
                         break;
                     block = dequeue(queue);
-                    logging(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
+                    //logging(MASTER_RANK, "popped block (%d, %d): sent to process %d\n", block->i, block->j, i);
                     load_BlockParam(param_msg, block, seq1, seq2);
                     send_BlockParam(param_msg, i, TAG_BLOCK_PARAM);
                     proc_available[i] = false;
@@ -131,7 +131,7 @@ void completion()
         }
         else
         {
-            logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
+            //logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
         }
     }
 }
@@ -144,7 +144,7 @@ void traceback()
     load_dependencies(block, map);
     load_BlockParam(param_msg, block, seq1, seq2);
     send_BlockParam(param_msg, 1, TAG_TRACEBACK_RUN);
-    logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
+    //logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
 
     working_procs = 1;
     uint32_t traceback_progress = 0;
@@ -155,7 +155,7 @@ void traceback()
         working_procs--;
         if (status.MPI_TAG == TAG_TRACEBACK_RESULT)
         {
-            logging(MASTER_RANK, "received traceback block result (%d, %d) from process %d \n", traceback_msg->block_i, traceback_msg->block_j, cnxt_pid);
+            //logging(MASTER_RANK, "received traceback block result (%d, %d) from process %d \n", traceback_msg->block_i, traceback_msg->block_j, cnxt_pid);
 
             // actualizo las secuencias encontradas en el traceback
             update_Traceback(traceback_msg, &matched_seq1, &matched_seq2);
@@ -171,7 +171,7 @@ void traceback()
             {
                 print_progress_bar(100, 100, "Traceback Progress");
                 printf("\n");
-                logging(MASTER_RANK, "traceback completed \n");
+                //logging(MASTER_RANK, "traceback completed \n");
                 break;
             }
             // el traceback arranca en una celda que no es la guardada en el map
@@ -180,14 +180,14 @@ void traceback()
 
             load_dependencies(block, map);
             // envio a que se empiece a correr el traceback sobre el bloque que ya va a estar calculado
-            logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
+            //logging(MASTER_RANK, "block (%d, %d): sent to process traceback %d \n", block->i, block->j, 1);
             load_BlockParam(param_msg, block, seq1, seq2);
             send_BlockParam(param_msg, 1, TAG_TRACEBACK_RUN);
             working_procs++;
         }
         else
         {
-            logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
+            //logging(MASTER_RANK, "received unexpected message with tag %d from process %d \n", status.MPI_TAG, cnxt_pid);
         }
     }
 }

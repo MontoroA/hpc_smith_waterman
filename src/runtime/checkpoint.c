@@ -25,7 +25,7 @@ FILE *create_checkpoint_file(const char *filename)
         return NULL;
     }
 
-    logging(MASTER_RANK, "Created checkpoint file: %s\n", filename);
+    //logging(MASTER_RANK, "Created checkpoint file: %s\n", filename);
     return file;
 }
 
@@ -38,7 +38,7 @@ FILE *open_checkpoint_file(const char *filename)
         return NULL;
     }
 
-    logging(MASTER_RANK, "Opened checkpoint file: %s\n", filename);
+    //logging(MASTER_RANK, "Opened checkpoint file: %s\n", filename);
     return file;
 }
 
@@ -81,13 +81,13 @@ int save_wavefront_to_checkpoint(FILE *file, uint32_t wavefront_number, BlockMap
         return -1;
     }
 
-    logging(MASTER_RANK, "Saved wavefront %d to checkpoint\n", wavefront_number);
+    //logging(MASTER_RANK, "Saved wavefront %d to checkpoint\n", wavefront_number);
     return 0;
 }
 
 int load_from_checkpoint(FILE *file, BlockMap *map)
 {
-    logging(MASTER_RANK, "Loading from checkpoint...\n");
+    //logging(MASTER_RANK, "Loading from checkpoint...\n");
 
     if (fseek(file, 0, SEEK_SET) != 0)
     {
@@ -126,11 +126,11 @@ int load_from_checkpoint(FILE *file, BlockMap *map)
                     return -1;
                 }
                 block->is_unlocked = true;
-                logging(MASTER_RANK, "Loaded block (%d, %d) from checkpoint\n", i, j);
+                //logging(MASTER_RANK, "Loaded block (%d, %d) from checkpoint\n", i, j);
             }
         }
     }
-    logging(MASTER_RANK, "Loaded from checkpoint: last_wavefront_computed = %d\n", last_wavefront_computed); // TODO checkear que dice que retomo de la penultima y no de la ultima raro
+    //logging(MASTER_RANK, "Loaded from checkpoint: last_wavefront_computed = %d\n", last_wavefront_computed); // TODO checkear que dice que retomo de la penultima y no de la ultima raro
     return last_wavefront_computed;
 }
 

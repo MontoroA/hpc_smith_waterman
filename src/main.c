@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
         int mode = read_mode(argc, argv, load_checkpoint);
         if (mode == MODE_INVALID)
         {
-            logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
+            //logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
             terminate_Workers();
             return EXIT_FAILURE;
         }
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
         int mode = read_mode(argc, argv, load_checkpoint);
         if (mode == MODE_INVALID)
         {
-            logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
+            //logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
             terminate_Workers();
             return EXIT_FAILURE;
         }
