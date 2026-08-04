@@ -1,4 +1,5 @@
 #!/bin/sh
+export FI_PROVIDER=tcp
 
 HOSTFILE=config/pcunix
 

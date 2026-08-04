@@ -24,6 +24,6 @@ else
 fi
 
 #parallel
-mpiexec -np 8 -hostfile $HOSTFILE ./build/smith_waterman "$@"
+#mpiexec -np 8 -hostfile $HOSTFILE ./build/smith_waterman "$@"
 #sequential
-# mpiexec -np 1 ./build/smith_waterman "$@"
+mpiexec -np 1 ./build/smith_waterman "$@"
