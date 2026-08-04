@@ -1,7 +1,7 @@
 #include "algorithm/sequential.h"
 #include "algorithm/common.h"
 
-void sequential_init(bool load_checkpoint)
+double sequential_init(bool load_checkpoint, double start_time)
 {
     logging(MASTER_RANK, "Sequential initialized\n");
     map = create_Map(seq1, seq2);
@@ -31,20 +31,22 @@ void sequential_init(bool load_checkpoint)
         exit(EXIT_FAILURE);
     }
 
+    double accumulated_time_checkpoint = 0;
+
     if (!load_checkpoint)
     {
-        checkpoint = create_checkpoint_file(CHECKPOINT_FILE_PATH);
+        checkpoint = create_checkpoint_file(CHECKPOINT_FILE_PATH, start_time);
         block = get_MatrixBlock(0, 0, map);
         load_dependencies(block, map);
 
         enqueue(queue, block);
         logging(MASTER_RANK, "Sequential starting\n");
+        accumulated_time_checkpoint = 0;
     }
     else
     {
         checkpoint = open_checkpoint_file(CHECKPOINT_FILE_PATH);
-        wavefront_number = load_from_checkpoint(checkpoint, map);
-
+        wavefront_number = load_from_checkpoint(checkpoint, map, start_time, &accumulated_time_checkpoint);
         // encolo los bloques que estan para ejecutar
         for (uint32_t i = 0; i < map->height && i <= wavefront_number; i++)
         {
@@ -57,6 +59,7 @@ void sequential_init(bool load_checkpoint)
         }
         logging(MASTER_RANK, "Sequential loaded from checkpoint\n");
     }
+    return accumulated_time_checkpoint;
 }
 
 void sequential_completion()
@@ -173,11 +176,12 @@ void sequential_traceback()
     free_TracebackResult(traceback_msg);
 }
 
-SWAReport *sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint)
+SWAReport *sequential(CharArray *sequence1, CharArray *sequence2, bool load_checkpoint, double start_time, double *accumulated_time_checkpoint)
 {
     seq1 = sequence1;
     seq2 = sequence2;
-    sequential_init(load_checkpoint);
+
+    *accumulated_time_checkpoint = sequential_init(load_checkpoint, start_time);
 
     sequential_completion();
 
