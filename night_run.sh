@@ -1,4 +1,6 @@
 #!/bin/sh
+module load mpi/mpich-x86_64
+
 export FI_PROVIDER=tcp
 
 HOSTFILE=config/pcunix

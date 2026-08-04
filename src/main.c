@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
         int mode = read_mode(argc, argv, load_checkpoint);
         if (mode == MODE_INVALID)
         {
-            //logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
+            // logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
             terminate_Workers();
             return EXIT_FAILURE;
         }
@@ -54,7 +54,14 @@ int main(int argc, char *argv[])
             free_SequenceBuffer(seqs[1]);
             free_Reports(report);
         }
+
+        printf("Rank %d: before MPI_Finalize\n", rank);
+        fflush(stdout);
+
         MPI_Finalize();
+
+        printf("Rank %d: after MPI_Finalize\n", rank);
+        fflush(stdout);
         return 0;
     }
 
@@ -68,7 +75,7 @@ int main(int argc, char *argv[])
         int mode = read_mode(argc, argv, load_checkpoint);
         if (mode == MODE_INVALID)
         {
-            //logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
+            // logging(MASTER_RANK, "Error leyendo modo: puede ser porque el modo fue incorrecto, o porque la cantidad de parámetros no fue especificada\n");
             terminate_Workers();
             return EXIT_FAILURE;
         }
@@ -88,6 +95,12 @@ int main(int argc, char *argv[])
         terminate_Workers();
     }
 
+    printf("Rank %d: before MPI_Finalize\n", rank);
+    fflush(stdout);
+
     MPI_Finalize();
+
+    printf("Rank %d: after MPI_Finalize\n", rank);
+    fflush(stdout);
     return 0;
 }
