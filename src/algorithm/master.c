@@ -104,6 +104,7 @@ void completion()
                 // logging(MASTER_RANK, "New max score block (%d, %d) with max score %d\n", max_score_block->i, max_score_block->j, max_score_block->max_cell.max_score);
             }
             update_BlockMap(result_msg, map);
+            printf("MASTER: bloque procesado (%d, %d) con max score %d\n", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
             enqueue_ready_blocks(queue, map, &result_msg->block);
 
             proc_available[cnxt_pid] = true;

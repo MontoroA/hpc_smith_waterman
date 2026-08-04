@@ -16,9 +16,10 @@ void slave()
     BlockParam *param_msg = malloc(sizeof(BlockParam));
     BlockResult *result_msg = malloc(sizeof(BlockResult));
     uint32_t *matrix = create_block(BLOCK_WIDTH + 1, BLOCK_HEIGHT + 1);
-    if(matrix == NULL){
+    if (matrix == NULL)
+    {
         // TODO precisa una mejor solucion
-        //logging(rank, "failed to allocate matrix block\n");
+        // logging(rank, "failed to allocate matrix block\n");
         exit(EXIT_FAILURE);
     }
     MatrixCell *cell = malloc(sizeof(MatrixCell));
@@ -41,7 +42,7 @@ void slave()
 
         if (status.MPI_TAG == TAG_TERMINATE)
         {
-            //logging(rank, "received terminate signal");
+            // logging(rank, "received terminate signal");
             break;
         }
 
@@ -50,14 +51,14 @@ void slave()
         seq2->data = param_msg->seq2;
         seq2->length = param_msg->block.height;
 
-        //logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
+        // logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
         load_block(matrix, &param_msg->block);
         complete_block(matrix, cell, seq1, seq2);
-
+        printf("SLAVE %d: bloque procesado (%d, %d) con max score %d\n", rank, param_msg->block.i, param_msg->block.j, cell->max_score);
         if (status.MPI_TAG == TAG_BLOCK_PARAM)
         {
             load_blockResult(result_msg, matrix, cell, param_msg);
-            //logging(rank, "sending result for block (%d, %d) with max score %d ", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
+            // logging(rank, "sending result for block (%d, %d) with max score %d ", result_msg->block.i, result_msg->block.j, result_msg->result.max_score);
             send_BlockResult(result_msg);
         }
 
@@ -71,7 +72,7 @@ void slave()
             next_block = calculate_traceback_block(matched_seq1, matched_seq2, matrix, cell, &traceback_length, seq1->data, seq2->data);
 
             load_tracebackResult(traceback_msg, cell, next_block, param_msg, traceback_length, matched_seq1, matched_seq2);
-            //logging(rank, " sending traceback result for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
+            // logging(rank, " sending traceback result for block (%d, %d)", traceback_msg->block_i, traceback_msg->block_j);
             send_TracebackResult(traceback_msg, TAG_TRACEBACK_RESULT);
         }
     }
