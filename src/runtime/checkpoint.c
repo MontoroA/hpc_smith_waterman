@@ -48,9 +48,21 @@ FILE *open_checkpoint_file(const char *filename)
 
 int save_wavefront_to_checkpoint(FILE *file, uint32_t wavefront_number, BlockMap *map)
 {
+    long size = ftell(file);
+    if (size == -1L)
+    {
+        perror("ftell");
+        return -1;
+    }
+
+    if ((unsigned long)size >= MAX_CHECKPOINT_SIZE) // si excede el tamaño maximo del checkpoint no guardo nada y sigo con la ejecucion
+    {
+        return 0;
+    }
+
     for (uint32_t i = 0; i < map->height && i <= wavefront_number; i++)
     {
-        long size = ftell(file);
+        size = ftell(file);
         if ((unsigned long)size >= MAX_CHECKPOINT_SIZE) // si excede el tamaño maximo del checkpoint no guardo nada y sigo con la ejecucion
         {
             return 0;
@@ -175,18 +187,6 @@ void auto_save_checkpoint(uint32_t *next_wavefront_number, FILE *fp, BlockMap *m
                 return;
             }
         }
-    }
-
-    long size = ftell(fp);
-    if (size == -1L)
-    {
-        perror("ftell");
-        return;
-    }
-
-    if ((unsigned long)size >= MAX_CHECKPOINT_SIZE) // si excede el tamaño maximo del checkpoint no guardo nada y sigo con la ejecucion
-    {
-        return;
     }
 
     int res = save_wavefront_to_checkpoint(fp, *next_wavefront_number, map);

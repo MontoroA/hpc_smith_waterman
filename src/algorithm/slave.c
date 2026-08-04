@@ -54,7 +54,6 @@ void slave()
         // logging(rank, "receives block (%d, %d)", param_msg->block.i, param_msg->block.j);
         load_block(matrix, &param_msg->block);
         complete_block(matrix, cell, seq1, seq2);
-        printf("SLAVE %d: bloque procesado (%d, %d) con max score %d\n", rank, param_msg->block.i, param_msg->block.j, cell->max_score);
         if (status.MPI_TAG == TAG_BLOCK_PARAM)
         {
             load_blockResult(result_msg, matrix, cell, param_msg);
