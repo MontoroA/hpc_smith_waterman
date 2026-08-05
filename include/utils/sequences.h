@@ -7,7 +7,7 @@
 
 #include "collections/arrays.h"
 
-#define MAX_BUFFER_SIZE 2000000 
+#define MAX_BUFFER_SIZE 3000000 
 
 typedef struct {
     CharArray* data;

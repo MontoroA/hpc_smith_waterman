@@ -150,11 +150,10 @@ char *save_sequence(const char *folder, CharArray *seq, const char *name)
 
 // ojo: tienen largo 1 de mas
 // TODO resolver el NULL al final. Va?
-int generate_and_save_sequence(int exp)
+int generate_and_save_sequence(int total_size)
 {
     srand(time(NULL));
     char bases[] = {'A', 'C', 'G', 'T'};
-    uint32_t total_size = pow(10, exp);
     uint32_t size = min(total_size, MAX_BUFFER_SIZE);
 
     char *folder = decide_folder_based_on_size(total_size);
@@ -296,8 +295,8 @@ SequenceBuffer **execute_mode(int mode, char **params)
         break;
 
     case MODE_GENERATE_RANDOM:
-        int exponent = atoi(params[0]);
-        err = generate_and_save_sequence(exponent);
+        int size = atoi(params[0]);
+        err = generate_and_save_sequence(size);
         break;
 
     case MODE_LIST_SEQUENCES:

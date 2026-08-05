@@ -2,6 +2,8 @@ data/small/*
 data/medium/*
 data/large/*
 data/temp/*
+data/output/*
+data/output_cli/*
 build/*
 .vscode/*
 data/temp/*
