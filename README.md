@@ -1,18 +1,11 @@
 # Proyecto final - Computación de alta performance
+##### Andrés Montoro 5.169.779-1, Matías Sención 5.263.989-9
 ### Grupo O - FING UDELAR 2026
-##### Andrés Montoro 5.169.779-1
-##### Matías Sención 5.263.989-9
 
 La interacción con el sistema se da a través de consola. Los pasos para ejecutar son
 - make BLOCK_SIZE=n (largo y ancho de los bloques)
 - ./hpc_run.sh m params (o seq_run.sh para correr el secuencial)
 - make clean (Para limpiar la compilación)
-
-Por ejemplo:
-
-make BLOCK_SIZE=1000
-./hpc_run.sh 2 data/small/default_seq1 data/small/default_seq2
-
 
 El parámetro "m" es el modo de ejecución: 
 
@@ -26,6 +19,19 @@ El parámetro "m" es el modo de ejecución:
 
 5- Imprime en consola la secuencia indicada. params = path
 
+
+
+Por ejemplo:
+
+make clean
+
+make BLOCK_SIZE=1000
+
+./hpc_run.sh 2 data/small/default_seq1 data/small/default_seq2
+
+En caso de que se desee restablecer una ejecución que se vio interrumpida, ejecutar
+
+./hpc_run.sh 2 {seq_path1} {seq_path2} --resume
 
 
 Otras consideraciones:
