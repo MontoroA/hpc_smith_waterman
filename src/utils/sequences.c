@@ -5,7 +5,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
-#include <limits.h>
 #include <math.h>
 
 #include "utils/cli.h"
@@ -42,10 +41,10 @@ SequenceBuffer *load_Sequence(const char *filename, const uint32_t start)
     FILE *filePointer;
     filePointer = fopen(filename, "rb");
 
-    logging(0, "Loading sequence from file: %s\n", filename);
+    //logging(0, "Loading sequence from file: %s\n", filename);
     if (filePointer == NULL)
     {
-        logging(0, "Could not open file\n");
+        //logging(0, "Could not open file\n");
         return NULL;
     }
 
@@ -60,7 +59,7 @@ SequenceBuffer *load_Sequence(const char *filename, const uint32_t start)
     uint32_t read = fread(seq->data, 1, read_length, filePointer);
     if (read != read_length)
     {
-        logging(0, "Error reading file: expected %ld bytes, read %d bytes\n", read_length, read);
+        //logging(0, "Error reading file: expected %ld bytes, read %d bytes\n", read_length, read);
         free(seq->data);
         free(seq);
         fclose(filePointer);
@@ -130,7 +129,7 @@ char *save_sequence(const char *folder, CharArray *seq, const char *name)
     FILE *filePointer = fopen(path, "ab");
     if (filePointer == NULL)
     {
-        logging(0, "Could not open file for writing: %s\n", path);
+        //logging(0, "Could not open file for writing: %s\n", path);
         free(newName);
         return NULL;
     }
@@ -141,8 +140,6 @@ char *save_sequence(const char *folder, CharArray *seq, const char *name)
     if (written != seq->length)
     {
         free(newName);
-        free(seq->data);
-        free(seq);
         return NULL;
     }
 
@@ -151,11 +148,10 @@ char *save_sequence(const char *folder, CharArray *seq, const char *name)
 
 // ojo: tienen largo 1 de mas
 // TODO resolver el NULL al final. Va?
-int generate_and_save_sequence(int exp)
+int generate_and_save_sequence(int total_size)
 {
     srand(time(NULL));
     char bases[] = {'A', 'C', 'G', 'T'};
-    uint32_t total_size = pow(10, exp);
     uint32_t size = min(total_size, MAX_BUFFER_SIZE);
 
     char *folder = decide_folder_based_on_size(total_size);
@@ -180,13 +176,16 @@ int generate_and_save_sequence(int exp)
 
         name = save_sequence(folder, seq, name);
         printf("Saved bytes %d to %d of %d in %s%s\n", saved_size, saved_size + chunk_size, total_size, folder, name);
-        free(chunk);
-        free(seq);
         if (name == NULL)
         {
-            logging(0, "Error saving sequence\n");
+            //logging(0, "Error saving sequence\n");
+            free(chunk);
+            free(seq);
             return -1;
         }
+        printf("Saved bytes %d to %d of %d in %s%s\n", saved_size, saved_size + chunk_size, total_size, folder, name);
+        free(chunk);
+        free(seq);
         saved_size += chunk_size;
     }
     return 0;
@@ -197,7 +196,7 @@ void list_files(const char *path)
     DIR *dir = opendir(path);
     if (dir == NULL)
     {
-        logging(0, "Could not open directory: %s\n", path);
+        //logging(0, "Could not open directory: %s\n", path);
         return;
     }
     struct dirent *entry;
@@ -235,7 +234,7 @@ int print_sequence(const char *filepath)
     {
         return 1;
     }
-    logging(0, "Printing sequence from %s", filepath);
+    //logging(0, "Printing sequence from %s", filepath);
 
     char buffer[BUFFER_SIZE];
     size_t bytes_read;
@@ -291,14 +290,13 @@ SequenceBuffer **execute_mode(int mode, char **params)
         {
             free(seqs[0]);
             free(seqs[1]);
-            free(seqs);
             err = 1;
         }
         break;
 
     case MODE_GENERATE_RANDOM:
-        int exponent = atoi(params[0]);
-        err = generate_and_save_sequence(exponent);
+        int size = atoi(params[0]);
+        err = generate_and_save_sequence(size);
         break;
 
     case MODE_LIST_SEQUENCES:
@@ -311,7 +309,7 @@ SequenceBuffer **execute_mode(int mode, char **params)
         {
             dir = path;
         }
-        logging(0, "Listing files in directory: %s\n", dir);
+        //logging(0, "Listing files in directory: %s\n", dir);
         list_files(dir);
         break;
 
@@ -320,7 +318,7 @@ SequenceBuffer **execute_mode(int mode, char **params)
         err = print_sequence(print_path);
         if (err != 0)
         {
-            logging(0, "Error printing sequence from %s\n", print_path);
+            //logging(0, "Error printing sequence from %s\n", print_path);
         }
         break;
     default:
@@ -328,7 +326,7 @@ SequenceBuffer **execute_mode(int mode, char **params)
     }
     if (err != 0)
     {
-        logging(0, "Error ejecutando modo: no se pudieron cargar las secuencias\n");
+        //logging(0, "Error ejecutando modo: no se pudieron cargar las secuencias\n");
         free(seqs);
         return NULL;
     }

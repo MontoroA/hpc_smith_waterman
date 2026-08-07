@@ -1,5 +1,6 @@
 CC = mpicc 
-CFLAGS = -Wall -Wextra -O2 -fopenmp -Iinclude 
+BLOCK_SIZE ?= 10000
+CFLAGS = -Wall -Wextra -O2 -w -fopenmp -Iinclude -DBLOCK_SIZE=$(BLOCK_SIZE)
 LDFLAGS = -fopenmp -lm
 
 MAIN_SRC = src/main.c
@@ -18,12 +19,12 @@ TARGET = build/smith_waterman
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	mkdir -p build
+	@mkdir -p build
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
 build/%.o: src/%.c
-	mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	@rm -rf $(OBJDIR) $(TARGET)

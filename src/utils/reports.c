@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "utils/reports.h"
+#include "utils/sequences.h"
 #include "runtime/mpi_handler.h"
 
 void write_in_file(const char *filepath, char *data, const int length)
@@ -12,9 +13,26 @@ void write_in_file(const char *filepath, char *data, const int length)
     FILE *filePointer = fopen(filepath, "ab");
     if (filePointer == NULL)
     {
-        logging(0, "Could not open file for writing: %s\n", filepath);
+        //logging(0, "Could not open file for writing: %s\n", filepath);
     }
 
+    fwrite(data, 1, length, filePointer);
+    fclose(filePointer);
+}
+
+void execution_report(const char *filepath, char *data, const int length)
+{
+    char path[PATH_MAX];
+
+    uint32_t file_count = count_files(filepath);
+    snprintf(path, sizeof(path), "%s/%d", filepath, file_count + 1);
+
+    FILE *filePointer = fopen(path, "ab");
+    if (filePointer == NULL)
+    {
+        //logging(0, "Could not open file for writing: %s\n", path);
+        return;
+    }
     fwrite(data, 1, length, filePointer);
     fclose(filePointer);
 }
@@ -107,6 +125,9 @@ void reports(SWAReport *report)
 {
     // TODO: implementar primitiva en messages para recibir reportes de los workers
     double tiempo = report->end_time - report->start_time;
+    char res[1000];
+    snprintf(res, sizeof(res), "Tiempo de ejecución: %f segundos\n", tiempo);
+    execution_report("./data/output", res, strlen(res));
     printf("Tiempo de ejecución: %f segundos\n", tiempo);
 
     save_list(report->matched_seq1, "./data/temp/matched_seq1.txt");
