@@ -140,8 +140,6 @@ char *save_sequence(const char *folder, CharArray *seq, const char *name)
     if (written != seq->length)
     {
         free(newName);
-        free(seq->data);
-        free(seq);
         return NULL;
     }
 
@@ -178,13 +176,16 @@ int generate_and_save_sequence(int total_size)
 
         name = save_sequence(folder, seq, name);
         printf("Saved bytes %d to %d of %d in %s%s\n", saved_size, saved_size + chunk_size, total_size, folder, name);
-        free(chunk);
-        free(seq);
         if (name == NULL)
         {
             //logging(0, "Error saving sequence\n");
+            free(chunk);
+            free(seq);
             return -1;
         }
+        printf("Saved bytes %d to %d of %d in %s%s\n", saved_size, saved_size + chunk_size, total_size, folder, name);
+        free(chunk);
+        free(seq);
         saved_size += chunk_size;
     }
     return 0;
@@ -289,7 +290,6 @@ SequenceBuffer **execute_mode(int mode, char **params)
         {
             free(seqs[0]);
             free(seqs[1]);
-            free(seqs);
             err = 1;
         }
         break;
