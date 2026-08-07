@@ -20,7 +20,7 @@ El parámetro "m" es el modo de ejecución:
 
 2- Ejecuta el algoritmo. Leerá los archivos con los nombres especificados en /data. params = name1 name2
 
-3- Generará una secuencia aleatoria que guardará en la carpeta correspondiente. params = exponente
+3- Generará una secuencia aleatoria que guardará en la carpeta correspondiente. params = largo
 
 4- Muestra todas las secuencias guardadas en el directorio "data". Opcionalmente puede especificarse un subdirectorio. params = subdirectorio (opcional)
 
@@ -33,3 +33,5 @@ Otras consideraciones:
 - En el header primitives.h hay opciones de configuración del algoritmo, particularmente relacionados a la función de recompensa.
 
 - En los archivos run.sh (paralelo o secuencial) hay variables para determinar hiperparámetros de ejecución: cantidad de esclavos y archivo con hosts.
+
+- La alineación obtenida se puede ver en los archivos data/temp/matched_seq1 y data/temp/matched_seq2
